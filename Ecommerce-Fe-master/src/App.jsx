@@ -24,7 +24,7 @@ import InformationDetailOrder from "./module/UserProfile/InformationDetailOrder"
 import Navbar from "./components/navbar/Navbar";
 import { PayPalScriptProvider } from "@paypal/react-paypal-js";
 import { key } from "./utils/constants/key";
-import ChatStream from "./components/chat/ChatStream";
+
 
 function App() {
   return (
@@ -56,8 +56,7 @@ function App() {
               path="/account/orders/:id"
               element={<InformationDetailOrder />}
             ></Route>
-            <Route path="/account/address" element={<UserAddress />}></Route>
-            <Route path="/account/chat" element={<ChatStream />}></Route>
+            <Route path="/account/address" element={<UserAddress />}></Route> 
             <Route
               path="/account/reset-password"
               element={<UpdatePassword />}

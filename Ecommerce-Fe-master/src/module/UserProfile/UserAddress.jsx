@@ -30,7 +30,7 @@ const schema = yup.object({
     }),
   address: yup.string().required("Vui lòng nhập địa chỉ nhà"),
   province: yup.string().required("Vui lòng chọn Tỉnh/ Thành phố"),
-  dictrict: yup.string().required("Vui lòng chọn Quận/Huyện"),
+ // dictrict: yup.string().required("Vui lòng chọn Quận/Huyện"),
   ward: yup.string().required("Vui lòng chọn Phường/Xã"),
 });
 const UserAddress = () => {
@@ -76,15 +76,23 @@ const UserAddress = () => {
   let isLocked = false;
 
   const fetchProvince = async () => {
-    const { data } = await axios.get("https://provinces.open-api.vn/api/p");
-    setProvince(data);
+    try {
+      const { data } = await axios.get("https://provinces.open-api.vn/api/p");
+      setProvince(data);
+    } catch (error) {
+      toast.error("Không thể tải danh sách tỉnh");
+    }
   };
 
   const fetchDistrict = async () => {
-    const { data } = await axios.get(
-      `https://provinces.open-api.vn/api/p/${provinceId}?depth=2`
-    );
-    setDistrict(data.districts);
+    try {
+      const { data } = await axios.get(
+        `https://provinces.open-api.vn/api/p/${provinceId}?depth=2`
+      );
+      setDistrict(data.districts);
+    } catch (error) {
+      toast.error("Không thể tải danh sách quận/huyện");
+    }
   };
 
   const fetchWard = async () => {

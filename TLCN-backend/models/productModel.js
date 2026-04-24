@@ -12,7 +12,6 @@ const productSchema = new mongoose.Schema(
       trim: true,
       maxlength: [200, "Tên sản phẩm tối đa 200 kí tự"],
       minlength: [10, "Tên sản phẩm tối thiểu 10 kí tự"],
-      // validate: [validator.isAlpha, 'product name must only contain characters']
     },
     price: {
       type: Number,
@@ -22,53 +21,50 @@ const productSchema = new mongoose.Schema(
       type: Number,
       validate: {
         validator: function (val) {
-          // this only points to current doc on NEW document creation
           return val <= this.price;
         },
         message: "Giá giảm: ({VALUE}) phải nhỏ hơn giá gốc",
       },
     },
     description: String,
+
     ratingsAverage: {
       type: Number,
       default: 4.5,
       min: [1, "Đánh giá từ 1 sao trở lên"],
       max: [5, "Đánh giá tối đa 5 sao"],
-      set: (val) => Math.round(val * 10) / 10, // 4.666666, 46.6666, 47, 4.7
+      set: (val) => Math.round(val * 10) / 10,
     },
     ratingsQuantity: {
       type: Number,
       default: 0,
     },
-    eachRating: [Number],
+    eachRating: {
+      "1_star": { type: Number, default: 0 },
+      "2_star": { type: Number, default: 0 },
+      "3_star": { type: Number, default: 0 },
+      "4_star": { type: Number, default: 0 },
+      "5_star": { type: Number, default: 0 }
+    },
+    
     images: [String],
-    createdAt: {
-      type: Date,
-      default: Date.now(),
-      select: false,
-    },
-    createdBy: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "User",
-    },
     inventory: {
       type: Number,
       default: 0,
     },
-    color: String,
-    cpu: String,
-    ram: String,
-    os: String,
-    weight: Number,
-    screen: String,
-    graphicCard: String,
-    battery: String,
-    demand: String,
-    updatedAt: Date,
-    updatedBy: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "User",
+    specs: {
+      color: String,
+      cpu: String,
+      ram: String,
+      os: String,
+      weight: String,
+      screen: String,
+      graphicCard: String,
+      storage: String,
+      battery: String,
+      demand: String
     },
+
     brand: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Brand",
@@ -77,9 +73,20 @@ const productSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: "Category",
     },
-    review: [Array],
+    createdBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+    },
+    updatedBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+    },
+    
+    embedding: [Number],
+
   },
   {
+    timestamps: true,
     toJSON: { virtuals: true },
     toObject: { virtuals: true },
   }
@@ -87,24 +94,27 @@ const productSchema = new mongoose.Schema(
 
 productSchema.index({ price: 1, ratingsAverage: -1 });
 productSchema.index({ "$**": "text" });
+
 productSchema.virtual("percent").get(function () {
   return !this.promotion
     ? 0
     : Number((((this.price - this.promotion) * 100) / this.price).toFixed());
 });
+
 // Virtual populate
 productSchema.virtual("reviews", {
   ref: "Review",
   foreignField: "product",
   localField: "_id",
 });
-productSchema.pre("create", function (next) {
-  //check if there is a description
+
+productSchema.pre("save", function (next) {
   if (this.description) {
     this.description = htmlPurify.sanitize(this.description);
   }
   next();
 });
+
 productSchema.pre(/^find/, function (next) {
   this.populate({
     path: "category",

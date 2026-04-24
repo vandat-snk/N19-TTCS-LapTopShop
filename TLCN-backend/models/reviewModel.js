@@ -32,6 +32,7 @@ const reviewSchema = new mongoose.Schema(
   {
     toJSON: { virtuals: true },
     toObject: { virtuals: true },
+    timestamps: true
   }
 );
 
@@ -88,30 +89,36 @@ reviewSchema.statics.calcAverageRatings = async function (productId) {
             $cond: [{ $eq: ["$rating", 1] }, 1, 0],
           },
         },
-        reviews: { $push: "$$ROOT" },
+        // reviews: { $push: "$$ROOT" },
       },
     },
   ]);
-  // console.log(stats);
 
   if (stats.length > 0) {
     await Product.findByIdAndUpdate(productId, {
       ratingsQuantity: stats[0].nRating,
       ratingsAverage: stats[0].avgRating,
-      eachRating: [
-        Number(stats[0].oneRating),
-        Number(stats[0].twoRating),
-        Number(stats[0].threeRating),
-        Number(stats[0].fourRating),
-        Number(stats[0].fiveRating),
-      ],
-      review: stats[0].reviews,
+
+      eachRating: {
+        "1_star": Number(stats[0].oneRating),
+        "2_star": Number(stats[0].twoRating),
+        "3_star": Number(stats[0].threeRating),
+        "4_star": Number(stats[0].fourRating),
+        "5_star": Number(stats[0].fiveRating),
+      },
+      // review: stats[0].reviews, 
     });
   } else {
     await Product.findByIdAndUpdate(productId, {
       ratingsQuantity: 0,
-      ratingsAverage: 4.5,
-      eachRating: [0, 0, 0, 0, 0],
+      ratingsAverage: 0,
+      eachRating: {
+        "1_star": 0,
+        "2_star": 0,
+        "3_star": 0,
+        "4_star": 0,
+        "5_star": 0,
+      },
       review: [],
     });
   }
@@ -124,15 +131,19 @@ reviewSchema.post("save", function () {
 
 // findByIdAndUpdate
 // findByIdAndDelete
-// reviewSchema.pre(/^findOneAnd/, async function (next) {
-//   this.r = await this.findOne();
-//   // console.log(this.r);
-//   next();
-// });
+// Bắt sự kiện khi dùng findByIdAndUpdate hoặc findByIdAndDelete
+reviewSchema.pre(/^findOneAnd/, async function (next) {
+  // Lưu document hiện tại vào r để lấy được productId ở post middleware
+  this.r = await this.findOne().clone(); 
+  next();
+});
 
-// reviewSchema.post(/^findOneAnd/, async function () {
-//   await this.r.constructor.calcAverageRatings(this.r.product);
-// });
+reviewSchema.post(/^findOneAnd/, async function () {
+  // await this.findOne(); KHÔNG làm điều này ở đây, query đã thực thi xong
+  if (this.r) {
+    await this.r.constructor.calcAverageRatings(this.r.product);
+  }
+});
 
 const Review = mongoose.model("Review", reviewSchema);
 

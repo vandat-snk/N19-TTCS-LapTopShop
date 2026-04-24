@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import ProdictItem from "../product/ProductItem";
 import { Swiper, SwiperSlide } from "swiper/react";
 import { Navigation, Pagination, EffectCards } from "swiper";
@@ -9,7 +9,6 @@ import "swiper/css/effect-cards";
 import { useNavigate } from "react-router-dom";
 import slugify from "slugify";
 import ModalAdvanced from "../../components/Modal/ModalAdvanced";
-import { useState } from "react";
 import { formatPrice } from "../../utils/formatPrice";
 import { disableBodyScroll, enableBodyScroll } from "body-scroll-lock";
 
@@ -17,11 +16,12 @@ const ProductListHome = ({ data, bg = "", className = "" }) => {
   const navigate = useNavigate();
   const [showModal, setShowModal] = useState(false);
   const bodyStyle = document.body.style;
-
   const [selectedItems, setSelectedItems] = useState([]);
 
   const addToCompare = (item) => {
-    setSelectedItems((selectedItems) => [...selectedItems, item]);
+    if (selectedItems.length < 2) {
+        setSelectedItems((prev) => [...prev, item]);
+    }
   };
 
   useEffect(() => {
@@ -34,22 +34,22 @@ const ProductListHome = ({ data, bg = "", className = "" }) => {
     const filteredItems = selectedItems.filter(
       (product) => product._id !== item._id
     );
-    setSelectedItems((selectedItems) => filteredItems);
+    setSelectedItems(filteredItems);
   };
 
   useEffect(() => {
     if (showModal === true) {
       disableBodyScroll(bodyStyle);
-    }
-    if (showModal === false) {
+    } else {
       enableBodyScroll(bodyStyle);
     }
-  }, [showModal]);
+  }, [showModal, bodyStyle]);
 
   const handleClick = (item) => {
     const path = slugify(item.title, { strict: true });
     navigate(`/${path}/${item._id}`);
   };
+
   return (
     <div className={`${className}`}>
       <div
@@ -96,9 +96,7 @@ const ProductListHome = ({ data, bg = "", className = "" }) => {
               <thead>
                 <tr>
                   <th></th>
-                  <th className="text-base font-semibold items-start">
-                    Sản phẩm 1
-                  </th>
+                  <th className="text-base font-semibold">Sản phẩm 1</th>
                   <th className="text-base font-semibold">Sản phẩm 2</th>
                 </tr>
               </thead>
@@ -106,288 +104,41 @@ const ProductListHome = ({ data, bg = "", className = "" }) => {
                 <tr>
                   <td className="text-base font-semibold">Ảnh sản phẩm</td>
                   <td>
-                    <img
-                      src={selectedItems[0]?.images[0]}
-                      alt=""
-                      className="w-[200px] h-[200px] object-cover mx-auto"
-                    />
+                    <img src={selectedItems[0]?.images[0]} alt="" className="w-[200px] h-[200px] object-cover mx-auto" />
                   </td>
                   <td>
-                    <img
-                      src={selectedItems[1]?.images[0]}
-                      alt=""
-                      className="w-[200px] h-[200px] object-cover mx-auto"
-                    />
+                    <img src={selectedItems[1]?.images[0]} alt="" className="w-[200px] h-[200px] object-cover mx-auto" />
                   </td>
                 </tr>
                 <tr>
                   <td className="text-base font-semibold">Tên sản phẩm</td>
-                  <td>
-                    <span
-                      className="text-base font-normal line-clamp-2 cursor-pointer"
-                      title={selectedItems[0]?.title}
-                    >
-                      {selectedItems[0]?.title}
-                    </span>
-                  </td>
-                  <td>
-                    <span
-                      className="text-base font-normal line-clamp-2 cursor-pointer"
-                      title={selectedItems[1]?.title}
-                    >
-                      {selectedItems[1]?.title}
-                    </span>
-                  </td>
+                  <td><span className="text-base font-normal line-clamp-2">{selectedItems[0]?.title}</span></td>
+                  <td><span className="text-base font-normal line-clamp-2">{selectedItems[1]?.title}</span></td>
                 </tr>
                 <tr>
                   <td className="text-base font-semibold">Thương hiệu</td>
-                  <td>
-                    <span className="text-base font-normal">
-                      {selectedItems[0]?.brand.name}
-                    </span>
-                  </td>
-                  <td>
-                    <span className="text-base font-normal">
-                      {selectedItems[1]?.brand.name}
-                    </span>
-                  </td>
+                  <td>{selectedItems[0]?.brand?.name}</td>
+                  <td>{selectedItems[1]?.brand?.name}</td>
                 </tr>
-
                 <tr>
                   <td className="text-base font-semibold">Hệ điều hành</td>
-                  <td>
-                    <span className="text-base font-normal">
-                      {selectedItems[0]?.os}
-                    </span>
-                  </td>
-                  <td>
-                    <span className="text-base font-normal">
-                      {selectedItems[1]?.os}
-                    </span>
-                  </td>
-                </tr>
-                <tr>
-                  <td className="text-base font-semibold">Màu sắc</td>
-                  <td>
-                    <span className="text-base font-normal">
-                      {selectedItems[0]?.color}
-                    </span>
-                  </td>
-                  <td>
-                    <span className="text-base font-normal">
-                      {selectedItems[1]?.color}
-                    </span>
-                  </td>
+                  <td>{selectedItems[0]?.specs?.os}</td>
+                  <td>{selectedItems[1]?.specs?.os}</td>
                 </tr>
                 <tr>
                   <td className="text-base font-semibold">CPU</td>
-                  <td>
-                    <span className="text-base font-normal">
-                      {selectedItems[0]?.cpu}
-                    </span>
-                  </td>
-                  <td>
-                    <span className="text-base font-normal">
-                      {selectedItems[1]?.cpu}
-                    </span>
-                  </td>
+                  <td>{selectedItems[0]?.specs?.cpu}</td>
+                  <td>{selectedItems[1]?.specs?.cpu}</td>
                 </tr>
                 <tr>
-                  <td className="text-base font-semibold">Màn hình</td>
-                  <td>
-                    <span className="text-base font-normal">
-                      {selectedItems[0]?.screen}
-                    </span>
-                  </td>
-                  <td>
-                    <span className="text-base font-normal">
-                      {selectedItems[1]?.screen}
-                    </span>
-                  </td>
+                    <td className="text-base font-semibold">Ram</td>
+                    <td>{selectedItems[0]?.specs?.ram}</td>
+                    <td>{selectedItems[1]?.specs?.ram}</td>
                 </tr>
                 <tr>
-                  <td className="text-base font-semibold">Graphic Card</td>
-                  <td>
-                    <span className="text-base font-normal">
-                      {selectedItems[0]?.graphicCard}
-                    </span>
-                  </td>
-                  <td>
-                    <span className="text-base font-normal">
-                      {selectedItems[1]?.graphicCard}
-                    </span>
-                  </td>
-                </tr>
-                <tr>
-                  <td className="text-base font-semibold">Pin</td>
-                  <td>
-                    <span className="text-base font-normal">
-                      {selectedItems[0]?.battery}
-                    </span>
-                  </td>
-                  <td>
-                    <span className="text-base font-normal">
-                      {selectedItems[1]?.battery}
-                    </span>
-                  </td>
-                </tr>
-                <tr>
-                  <td className="text-base font-semibold">Nhu cầu</td>
-                  <td>
-                    <span className="text-base font-normal">
-                      {selectedItems[0]?.demand}
-                    </span>
-                  </td>
-                  <td>
-                    <span className="text-base font-normal">
-                      {selectedItems[1]?.demand}
-                    </span>
-                  </td>
-                </tr>
-                <tr>
-                  <td className="text-base font-semibold">Ram</td>
-                  <td>
-                    <span className="text-base font-normal flex items-center gap-x-2">
-                      {selectedItems[0]?.ram}
-                      {Number(selectedItems[0]?.ram) -
-                        Number(selectedItems[1]?.ram) >=
-                        0 && (
-                        <svg
-                          xmlns="http://www.w3.org/2000/svg"
-                          fill="none"
-                          viewBox="0 0 24 24"
-                          strokeWidth="1.5"
-                          stroke="green"
-                          className="w-10 h-10"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                          />
-                        </svg>
-                      )}
-                    </span>
-                  </td>
-                  <td>
-                    <span className="text-base font-normal flex items-center gap-x-2">
-                      {selectedItems[1]?.ram}
-                      {Number(selectedItems[1]?.ram) -
-                        Number(selectedItems[0]?.ram) >=
-                        0 && (
-                        <svg
-                          xmlns="http://www.w3.org/2000/svg"
-                          fill="none"
-                          viewBox="0 0 24 24"
-                          strokeWidth="1.5"
-                          stroke="green"
-                          className="w-10 h-10"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                          />
-                        </svg>
-                      )}
-                    </span>
-                  </td>
-                </tr>
-                <tr>
-                  <td className="text-base font-semibold">Khối lượng</td>
-                  <td>
-                    <span className="text-lg font-normal flex items-center gap-x-2">
-                      {selectedItems[0]?.weight}
-                      {selectedItems[0]?.weight - selectedItems[1]?.weight <=
-                        0 && (
-                        <svg
-                          xmlns="http://www.w3.org/2000/svg"
-                          fill="none"
-                          viewBox="0 0 24 24"
-                          strokeWidth="1.5"
-                          stroke="green"
-                          className="w-10 h-10"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                          />
-                        </svg>
-                      )}
-                    </span>
-                  </td>
-                  <td>
-                    <span className="text-lg font-normal flex items-center gap-x-2">
-                      {selectedItems[1]?.weight}
-                      {selectedItems[1]?.weight - selectedItems[0]?.weight <=
-                        0 && (
-                        <svg
-                          xmlns="http://www.w3.org/2000/svg"
-                          fill="none"
-                          viewBox="0 0 24 24"
-                          strokeWidth="1.5"
-                          stroke="green"
-                          className="w-10 h-10"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                          />
-                        </svg>
-                      )}
-                    </span>
-                  </td>
-                </tr>
-                <tr>
-                  <td className="text-lg font-semibold">Giá tiền</td>
-                  <td>
-                    <span className="text-lg font-normal flex items-center gap-x-2">
-                      {selectedItems[0]?.promotion}
-                      {selectedItems[0]?.promotion -
-                        selectedItems[1]?.promotion <=
-                        0 && (
-                        <svg
-                          xmlns="http://www.w3.org/2000/svg"
-                          fill="none"
-                          viewBox="0 0 24 24"
-                          strokeWidth="1.5"
-                          stroke="green"
-                          className="w-10 h-10"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                          />
-                        </svg>
-                      )}
-                    </span>
-                  </td>
-                  <td>
-                    <span className="text-lg font-normal flex items-center gap-x-2">
-                      {formatPrice(selectedItems[1]?.promotion)}
-                      {selectedItems[1]?.promotion -
-                        selectedItems[0]?.promotion <=
-                        0 && (
-                        <svg
-                          xmlns="http://www.w3.org/2000/svg"
-                          fill="none"
-                          viewBox="0 0 24 24"
-                          strokeWidth="1.5"
-                          stroke="green"
-                          className="w-10 h-10"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                          />
-                        </svg>
-                      )}
-                    </span>
-                  </td>
+                  <td className="text-base font-semibold">Giá tiền</td>
+                  <td className="text-blue-700 font-bold">{formatPrice(selectedItems[0]?.promotion)}</td>
+                  <td className="text-blue-700 font-bold">{formatPrice(selectedItems[1]?.promotion)}</td>
                 </tr>
               </tbody>
             </table>

@@ -1,23 +1,18 @@
-// Comment / rating / createdAt / ref to product / ref to user
 const mongoose = require("mongoose");
 const Product = require("./productModel");
 
 const CommentSchema = new mongoose.Schema(
   {
-    comment: {
+    content: { 
       type: String,
       required: [true, "Bình luận không thể để trống!"],
     },
-    createdAt: {
-      type: Date,
-      default: Date.now,
-    },
+    
     product: {
       type: mongoose.Schema.ObjectId,
       ref: "Product",
       required: [true, "Vui lòng cung cấp sản phẩm Bình luận."],
     },
-    updateAt: Date,
     user: {
       type: mongoose.Schema.ObjectId,
       ref: "User",
@@ -28,7 +23,12 @@ const CommentSchema = new mongoose.Schema(
       ref: "Comment",
       default: null,
     },
-    like: [],
+    likes: [ 
+      {
+        type: mongoose.Schema.ObjectId,
+        ref: "User",
+      }
+    ],
     children: [
       {
         type: mongoose.Schema.ObjectId,
@@ -37,19 +37,13 @@ const CommentSchema = new mongoose.Schema(
     ],
   },
   {
+    timestamps: true, 
     toJSON: { virtuals: true },
     toObject: { virtuals: true },
   }
 );
 
 CommentSchema.index({ "$**": "text" });
-// Virtual populate
-
-// CommentSchema.virtual("children", {
-//   ref: "Comment",
-//   foreignField: "parent",
-//   localField: "_id",
-// });
 
 CommentSchema.pre(/^find/, function (next) {
   this.populate({
@@ -62,13 +56,6 @@ CommentSchema.pre(/^find/, function (next) {
     })
   next();
 });
-// CommentSchema.pre("findOneAndDelete", async function (next) {
-//   const data = await this.findOne().clone();
-//   await this.remove({
-//     _id: { $in: data.children },
-//   });
-//   next();
-// });
 
 const Comment = mongoose.model("Comment", CommentSchema);
 
