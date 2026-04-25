@@ -156,8 +156,8 @@ exports.topProduct = catchAsync(async (req, res, next) => {
       $group: {
         _id: option,
         quantity: { $sum: "$cart.quantity" },
-        title: { $first: "$cart.product.title" },
-        image: { $first: "$cart.product.images" },
+        title: { $first: "$cart.title" },
+        image: { $first: "$cart.image" },
       },
     },
     { $sort: { quantity: -1 } },
@@ -223,8 +223,8 @@ exports.topProductInRange = catchAsync(async (req, res, next) => {
       $group: {
         _id: option,
         quantity: { $sum: "$cart.quantity" },
-        title: { $first: "$cart.product.title" },
-        image: { $first: "$cart.product.images" },
+        title: { $first: "$cart.title" },
+        image: { $first: "$cart.image" },
       },
     },
     { $sort: { quantity: -1 } },
