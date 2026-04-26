@@ -23,6 +23,8 @@ const commentRouter = require("./routes/commentRoutes");
 const viewRouter = require("./routes/viewRoutes");
 const transactionRouter = require("./routes/transactionRoutes");
 const locationRouter = require("./routes/locationRoutes");
+const chatRouter = require("./routes/chatRoutes");
+const productApi = require("./routes/apiProduct");
 
 const app = express();
 app.engine("ejs", engine);
@@ -30,7 +32,7 @@ app.set("view engine", "ejs");
 // Add headers before the routes are defined
 app.use(
   cors({
-    origin: "http://localhost:5173",
+    origin: ["http://localhost:5173", "http://127.0.0.1:5173"],
     methods: ["POST", "GET", "PUT", "PATCH", "DELETE"],
     credentials: true,
   })
@@ -99,6 +101,8 @@ app.use("/api/v1/imports", importRouter);
 app.use("/api/v1/comments", commentRouter);
 app.use("/api/v1/payments", transactionRouter);
 app.use("/api/v1/locations", locationRouter);
+app.use("/api/v1/chat", chatRouter);
+app.use("/api", productApi);
 app.use("/", viewRouter);
 
 app.all("*", (req, res, next) => {
@@ -120,6 +124,3 @@ app.use((err, req, res, next) => {
 });
 
 module.exports = app;
-const productApi = require("./routes/apiProduct");
-
-app.use("/api", productApi);

@@ -1,5 +1,6 @@
 import { Routes, Route } from "react-router-dom";
 import React from "react";
+import Chatbot from "./components/Chatbot/Chatbot";
 import Header from "./components/header/Header";
 import Footer from "./components/footer/Footer";
 import HomePage from "./page/HomePage";
@@ -71,6 +72,7 @@ function App() {
           <Route path="/*" element={<NotFoundPage />}></Route>
         </Routes>
         <Footer />
+        <Chatbot />
       </PayPalScriptProvider>
     </>
   );
