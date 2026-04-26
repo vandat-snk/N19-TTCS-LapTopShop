@@ -400,7 +400,7 @@ Trợ lý:`;
 
   const referencedProducts = productIds.length > 0
     ? await Product.find({ _id: { $in: productIds.slice(0, 5) } })
-        .select("title price promotion images")
+        .select("_id title price promotion images slug")
         .lean()
     : [];
 
