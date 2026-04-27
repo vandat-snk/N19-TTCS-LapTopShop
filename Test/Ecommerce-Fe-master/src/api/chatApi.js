@@ -2,20 +2,24 @@ import axiosClient from "./axiosClient";
 
 const chatApi = {
   sendMessage(data) {
-    const url = "/api/v1/chat/send";
-    return axiosClient.post(url, data);
+    return axiosClient.post("/api/v1/chat/send", data);
   },
+
   getConversations() {
-    const url = "/api/v1/chat/conversations";
-    return axiosClient.get(url);
+    return axiosClient.get("/api/v1/chat/conversations");
   },
+
+  // ✅ FIX Ở ĐÂY
   getMessages(conversationId) {
-    const url = `/api/v1/chat/conversations/${conversationId}`;
-    return axiosClient.get(url);
+    return axiosClient.get(
+      `/api/v1/chat/conversations/${conversationId}`
+    );
   },
+
   deleteConversation(conversationId) {
-    const url = `/api/v1/chat/conversations/${conversationId}`;
-    return axiosClient.delete(url);
+    return axiosClient.delete(
+      `/api/v1/chat/conversations/${conversationId}`
+    );
   },
 };
 

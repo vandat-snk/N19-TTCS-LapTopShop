@@ -1,12 +1,16 @@
-const hideAlert = () => {
-  const el = document.querySelector(".alert");
-  if (el) el.parentElement.removeChild(el);
+const hideToast = () => {
+  const el = document.querySelector(".toast");
+  if (el) el.remove();
 };
 
-// type is 'success' or 'error'
-const showAlert = (type, msg, time = 5) => {
-  hideAlert();
-  const markup = `<div class="alert alert--${type}">${msg}</div>`;
-  document.querySelector("body").insertAdjacentHTML("afterbegin", markup);
-  window.setTimeout(hideAlert, time * 1000);
+const showToast = (type, msg, time = 5) => {
+  hideToast();
+
+  const toast = document.createElement("div");
+  toast.className = `toast toast--${type}`;
+  toast.innerText = msg;
+
+  document.body.appendChild(toast);
+
+  setTimeout(hideToast, time * 1000);
 };

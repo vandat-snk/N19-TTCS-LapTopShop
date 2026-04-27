@@ -1,8 +1,6 @@
 const express = require("express");
 const morgan = require("morgan");
-const path = require("path");
 const rateLimit = require("express-rate-limit");
-// const helmet = require("helmet");
 const mongoSanitize = require("express-mongo-sanitize");
 const xss = require("xss-clean");
 const hpp = require("hpp");
@@ -11,7 +9,8 @@ const cookieParser = require("cookie-parser");
 const engine = require("ejs-mate");
 
 const AppError = require("./utils/appError");
-// const globalErrorHandler = require("./controllers/errorController");
+
+// ROUTES
 const productRouter = require("./routes/productRoutes");
 const userRouter = require("./routes/userRoutes");
 const categoryRouter = require("./routes/categoryRoutes");
@@ -24,71 +23,67 @@ const viewRouter = require("./routes/viewRoutes");
 const transactionRouter = require("./routes/transactionRoutes");
 const locationRouter = require("./routes/locationRoutes");
 
+const chatRouter = require("./routes/chatRoutes");
+
+app.use("/api/v1", chatRouter);
+const chatRouter = require("./routes/chatRoutes");
+
 const app = express();
+
+/* ================= VIEW ENGINE ================= */
 app.engine("ejs", engine);
 app.set("view engine", "ejs");
-// Add headers before the routes are defined
+
+/* ================= CORS ================= */
 app.use(
   cors({
     origin: "http://localhost:5173",
-    methods: ["POST", "GET", "PUT", "PATCH", "DELETE"],
+    methods: ["GET", "POST", "PUT", "PATCH", "DELETE"],
     credentials: true,
   })
 );
-// Serving static files
-// app.use(express.static(path.join(__dirname, "public")));
-app.use(
-  "/bootstrap",
-  express.static(__dirname + "/node_modules/bootstrap/dist/")
-);
+
+/* ================= STATIC ================= */
+app.use("/bootstrap", express.static(__dirname + "/node_modules/bootstrap/dist/"));
 app.use("/text", express.static(__dirname + "/node_modules/tinymce/"));
-// 1) GLOBAL MIDDLEWARE
-// Set security HTTP headers
-// app.use(helmet());
+app.use(express.static(`${__dirname}/views`));
+app.use(express.static(`${__dirname}/public`));
+
+/* ================= SECURITY ================= */
 app.use(cookieParser());
 
-// Development logging
 if (process.env.NODE_ENV === "development") {
   app.use(morgan("dev"));
 }
 
-// Limit requests from same API
 const limiter = rateLimit({
   max: 1000,
   windowMs: 60 * 60 * 1000,
-  message: "Too many requests from this IP, please try again in an hour!",
+  message: "Too many requests from this IP, please try again later!",
 });
 app.use("/api", limiter);
 
-// Body parser, reading data from body into req.body
 app.use(express.json({ limit: "100kb" }));
 app.use(express.urlencoded({ extended: false }));
 
-// Data sanitization against NoSQL query injection
 app.use(mongoSanitize());
-
-// Data sanitization against XSS
 app.use(xss());
 
-// Prevent parameter pollution
 app.use(
   hpp({
-    whitelist: ["ratingsQuantity", "ratingsAverage", "price"],
+    whitelist: ["price", "ratingsAverage", "ratingsQuantity"],
   })
 );
 
-// Serving static files
-app.use(express.static(`${__dirname}/views`));
-app.use(express.static(`${__dirname}/public`));
-
-// Test middleware
+/* ================= TEST MIDDLEWARE ================= */
 app.use((req, res, next) => {
   req.requestTime = new Date().toISOString();
-  // console.log(req.headers);
   next();
 });
 
-// 3) ROUTES
+/* ================= ROUTES ================= */
+
+// MAIN API
 app.use("/api/v1/users", userRouter);
 app.use("/api/v1/products", productRouter);
 app.use("/api/v1/categories", categoryRouter);
@@ -99,27 +94,30 @@ app.use("/api/v1/imports", importRouter);
 app.use("/api/v1/comments", commentRouter);
 app.use("/api/v1/payments", transactionRouter);
 app.use("/api/v1/locations", locationRouter);
+
+// 🔥 CHAT ROUTE FIX 404
+app.use("/api/v1/chat", chatRouter);
+
+// VIEW ROUTES
 app.use("/", viewRouter);
 
-app.all("*", (req, res, next) => {
-  // next(new AppError(`Can't find ${req.originalUrl} on this server!`, 404));
-  res.status(200).render("404");
+/* ================= 404 ================= */
+app.all("*", (req, res) => {
+  res.status(404).json({
+    status: "fail",
+    message: `Can't find ${req.originalUrl} on this server`,
+  });
 });
 
+/* ================= ERROR HANDLER ================= */
 app.use((err, req, res, next) => {
-  // console.log(err.stack);
-
   err.statusCode = err.statusCode || 500;
   err.status = err.status || "error";
+
   res.status(err.statusCode).json({
     status: err.status,
-    error: err,
     message: err.message,
-    stack: err.stack,
   });
 });
 
 module.exports = app;
-const productApi = require("./routes/apiProduct");
-
-app.use("/api", productApi);

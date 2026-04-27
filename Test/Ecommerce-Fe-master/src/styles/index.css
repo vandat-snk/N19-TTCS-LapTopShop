@@ -447,3 +447,7 @@ input[type=range]::-webkit-slider-thumb {
   -webkit-appearance: none;
   @apply bg-green-500;
 }/*# sourceMappingURL=index.css.map */
+.chatbot-scope {
+  all: initial;
+  font-family: Roboto, sans-serif;
+}

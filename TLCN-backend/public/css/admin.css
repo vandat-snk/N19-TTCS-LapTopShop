@@ -12625,3 +12625,83 @@ body.sidebar-toggled footer.sticky-footer {
   border: 1px solid #e3e6f0;
   border-radius: 16px;
 }
+/* ===== CHANGE BLUE -> PINK THEME ===== */
+
+/* Primary text */
+.text-primary {
+  color: #ff4da6 !important;
+}
+
+a.text-primary:hover,
+a.text-primary:focus {
+  color: #cc0066 !important;
+}
+
+/* Button primary */
+.btn-primary {
+  background-color: #ff4da6 !important;
+  border-color: #ff4da6 !important;
+}
+
+.btn-primary:hover {
+  background-color: #e60073 !important;
+  border-color: #cc0066 !important;
+}
+
+.btn-primary:focus,
+.btn-primary.focus {
+  background-color: #e60073 !important;
+  border-color: #cc0066 !important;
+  box-shadow: 0 0 0 0.2rem rgba(255, 77, 166, 0.5) !important;
+}
+
+.btn-primary:active {
+  background-color: #cc0066 !important;
+  border-color: #b30059 !important;
+}
+
+/* Card border */
+.border-left-primary {
+  border-left: 4px solid #ff4da6 !important;
+}
+
+/* Icons */
+.text-gray-300 {
+  color: #ffb3d9 !important;
+}
+
+/* Dropdown active */
+.dropdown-item:active {
+  background-color: #ff4da6 !important;
+}
+
+/* Nav tabs */
+.nav-tabs .nav-link.active {
+  color: #ff4da6 !important;
+  border-color: #ff4da6 #ff4da6 #fff !important;
+}
+
+/* Pagination */
+.page-item.active .page-link {
+  background-color: #ff4da6 !important;
+  border-color: #ff4da6 !important;
+}
+
+/* Progress bar */
+.bg-primary {
+  background-color: #ff4da6 !important;
+}
+
+/* Badge */
+.badge-primary {
+  background-color: #ff4da6 !important;
+}
+
+/* Link */
+a {
+  color: #ff4da6;
+}
+
+a:hover {
+  color: #cc0066;
+}
