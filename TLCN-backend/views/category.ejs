@@ -1,59 +1,124 @@
 <% layout('base') -%>
-<div class="container">
-    <h1 class="my-4 text-center text-primary">Categories</h1>
-    <div class="card">
-        <div class="card-header">
-            <div class="row">
-                <div class="col col-sm-9 text-dark">
-                    <h4><strong>List Categories</strong></h4>
-                </div>
-                <div class="col col-sm-3">
-                    <button type="button" id="add_data" class="btn btn-success btn-sm float-end">Add</button>
-                </div>
-            </div>
-        </div>
-        <div class="card-body">
-            <div class="table-responsive">
-                <table class="table table-bordered table-hover" id="sample_data">
 
-                    <thead>
+<div class="container-fluid py-3">
+
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+
+        <h2 class="fw-bold m-0" style="color:#d63384;">
+            Danh mục
+        </h2>
+
+        <button type="button"
+            id="add_data"
+            class="btn shadow-sm"
+            style="background:linear-gradient(45deg,#ff4da6,#ff80bf);
+                   color:white; border:none; border-radius:10px;">
+            + Thêm danh mục
+        </button>
+
+    </div>
+
+    <!-- Card -->
+    <div class="card border-0 shadow-sm rounded-3">
+
+        <div class="card-header bg-white border-0">
+            <h5 class="fw-bold m-0" style="color:#ff4da6;">
+                Danh sách danh mục
+            </h5>
+        </div>
+
+        <div class="card-body">
+
+            <div class="table-responsive">
+
+                <table class="table table-hover align-middle" id="sample_data">
+
+                    <thead style="background:#fff0f6;">
                         <tr>
-                            <th>Name</th>
-                            <th>Action</th>
+                            <th style="color:#d63384;">Tên danh mục</th>
+                            <th style="color:#d63384;">Hành động</th>
                         </tr>
                     </thead>
-                    <tbody>
 
-                    </tbody>
+                    <tbody></tbody>
+
                 </table>
+
             </div>
 
         </div>
-
     </div>
+
 </div>
-<div class="modal" id="action_modal">
-    <div class="modal-dialog">
-        <div class="modal-content">
+
+<!-- Modal -->
+<div class="modal fade" id="action_modal">
+
+    <div class="modal-dialog modal-dialog-centered">
+
+        <div class="modal-content border-0 shadow-lg rounded-3">
+
             <form method="post" id="sample_form" enctype="multipart/form-data">
-                <div class="modal-header" id="dynamic_modal_title">
-                    <h5 class="modal-title"></h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+
+                <!-- Header -->
+                <div class="modal-header" style="background:#fff0f6;">
+
+                    <h5 class="modal-title fw-bold" id="dynamic_modal_title"
+                        style="color:#d63384;">
+                    </h5>
+
+                    <button type="button"
+                        class="btn-close"
+                        data-bs-dismiss="modal">
+                    </button>
+
                 </div>
+
+                <!-- Body -->
                 <div class="modal-body">
-                    <div class="mb-2 edit-show">
-                        <label class="form-label">Name</label>
-                        <input type="text" name="name" id="name" class="form-control" />
-                    </div>
+
+                    <label class="form-label fw-semibold">
+                        Tên danh mục
+                    </label>
+
+                    <input type="text"
+                        name="name"
+                        id="name"
+                        class="form-control shadow-sm"
+                        style="border-radius:10px;">
+
                 </div>
-                <div class="modal-footer">
+
+                <!-- Footer -->
+                <div class="modal-footer border-0">
+
                     <input type="hidden" name="id" id="id" />
                     <input type="hidden" name="action" id="action" value="Add" />
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                    <button type="submit" class="btn btn-primary" id="action_button">Add</button>
+
+                    <button type="button"
+                        class="btn btn-light"
+                        data-bs-dismiss="modal">
+                        Huỷ
+                    </button>
+
+                    <button type="submit"
+                        class="btn shadow-sm"
+                        id="action_button"
+                        style="background:linear-gradient(45deg,#ff4da6,#ff80bf);
+                               color:white; border:none;">
+                        Thêm
+                    </button>
+
                 </div>
+
             </form>
+
         </div>
+
     </div>
+
 </div>
+
+
 <script src="/js/category.js"></script>
