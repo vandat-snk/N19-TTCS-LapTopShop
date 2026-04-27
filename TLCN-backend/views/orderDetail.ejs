@@ -12,11 +12,11 @@
         <!-- HEADER -->
         <div class="card-header bg-white py-4 border-0">
 
-          <h5 class="mb-0 fw-bold" style="color:#d63384;">
-            🧾 Đơn hàng #<%= data._id %>
+          <h5 class="mb-0 fw-bold d-flex align-items-center gap-2" style="color:#d63384;"><i class="fa-solid fa-receipt"></i>
+            Đơn hàng #<%= data._id %>
           </h5>
 
-          <small class="text-muted">
+          <small class="text-muted d-flex align-items-center gap-1"><i class="fa-solid fa-user"></i>
             Khách hàng: <strong><%= data.user.name %></strong>
           </small>
 
@@ -76,17 +76,17 @@
           <div class="mt-4">
 
             <div class="d-flex justify-content-between">
-              <span class="text-muted">Ngày đặt:</span>
+              <span class="text-muted"><i class="fa-solid fa-calendar-days"></i> Ngày đặt:</span>
               <strong><%= data.date %></strong>
             </div>
 
             <div class="d-flex justify-content-between">
-              <span class="text-muted">Giảm giá:</span>
+              <span class="text-muted"><i class="fa-solid fa-tag"></i> Giảm giá:</span>
               <strong><%= data.discount %> VND</strong>
             </div>
 
             <div class="d-flex justify-content-between">
-              <span class="text-muted">Thanh toán:</span>
+              <span class="text-muted"><i class="fa-solid fa-credit-card"></i> Thanh toán:</span>
               <strong><%= data.payments %></strong>
             </div>
 
@@ -98,7 +98,7 @@
         <div class="card-footer text-end"
              style="background:#fff0f6; border:0;">
 
-          <h5 class="mb-0" style="color:#d63384;">
+          <h5 class="mb-0 d-flex justify-content-end align-items-center gap-2" style="color:#d63384;"><i class="fa-solid fa-coins"></i>
             Tổng tiền: <%= data.totalPrice %> VND
           </h5>
 
