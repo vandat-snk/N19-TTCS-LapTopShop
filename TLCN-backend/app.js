@@ -22,13 +22,9 @@ const commentRouter = require("./routes/commentRoutes");
 const viewRouter = require("./routes/viewRoutes");
 const transactionRouter = require("./routes/transactionRoutes");
 const locationRouter = require("./routes/locationRoutes");
+const chatRouter = require("./routes/chatRoutes"); // 
 
-const chatRouter = require("./routes/chatRoutes");
-
-app.use("/api/v1", chatRouter);
-const chatRouter = require("./routes/chatRoutes");
-
-const app = express();
+const app = express(); // 
 
 /* ================= VIEW ENGINE ================= */
 app.engine("ejs", engine);
