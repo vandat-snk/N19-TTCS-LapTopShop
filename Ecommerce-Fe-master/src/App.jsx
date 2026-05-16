@@ -1,5 +1,6 @@
 import { Routes, Route } from "react-router-dom";
 import React from "react";
+import Chatbot from "./components/Chatbot/Chatbot";
 import Header from "./components/header/Header";
 import Footer from "./components/footer/Footer";
 import HomePage from "./page/HomePage";
@@ -24,7 +25,7 @@ import InformationDetailOrder from "./module/UserProfile/InformationDetailOrder"
 import Navbar from "./components/navbar/Navbar";
 import { PayPalScriptProvider } from "@paypal/react-paypal-js";
 import { key } from "./utils/constants/key";
-import ChatStream from "./components/chat/ChatStream";
+
 
 function App() {
   return (
@@ -56,8 +57,7 @@ function App() {
               path="/account/orders/:id"
               element={<InformationDetailOrder />}
             ></Route>
-            <Route path="/account/address" element={<UserAddress />}></Route>
-            <Route path="/account/chat" element={<ChatStream />}></Route>
+            <Route path="/account/address" element={<UserAddress />}></Route> 
             <Route
               path="/account/reset-password"
               element={<UpdatePassword />}
@@ -72,6 +72,7 @@ function App() {
           <Route path="/*" element={<NotFoundPage />}></Route>
         </Routes>
         <Footer />
+        <Chatbot />
       </PayPalScriptProvider>
     </>
   );

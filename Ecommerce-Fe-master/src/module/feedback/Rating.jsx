@@ -66,7 +66,7 @@ const Rating = ({ onClose, onSubmit, id, rating = 0, review = "" }) => {
       id: id,
     };
     onSubmit(data);
-    onClose();
+    //onClose();
   };
 
   return (

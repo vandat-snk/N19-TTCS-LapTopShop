@@ -78,7 +78,7 @@ export const updateInfoUser = createAsyncThunk(
   "user/updateInfoUser",
   async (payload) => {
     const response = await userApi.updateUser(payload);
-    localStorage.setItem(StorageKeys.TOKEN, response.token);
+    //localStorage.setItem(StorageKeys.TOKEN, response.token);
     localStorage.setItem(StorageKeys.USER, JSON.stringify(response.data.user));
     return response.data.user;
   }
@@ -137,12 +137,17 @@ const userSlice = createSlice({
       state.status = action_status.SUCCEEDED;
       state.user = action.payload;
       state.current = action.payload;
+
+      localStorage.setItem(StorageKeys.USER, JSON.stringify(action.payload));
     },
     [getUser.rejected]: (state, action) => {
       state.status = action_status.FAILED;
     },
     [updateInfoUser.fulfilled]: (state, action) => {
       state.update = true;
+
+      state.current = action.payload;
+      localStorage.setItem(StorageKeys.USER, JSON.stringify(action.payload));
     },
   },
 });

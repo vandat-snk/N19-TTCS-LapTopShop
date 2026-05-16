@@ -1,19 +1,21 @@
-// Import the functions you need from the SDKs you need
 import { initializeApp } from "firebase/app";
-import { getAuth } from "firebase/auth";
-// TODO: Add SDKs for Firebase products that you want to use
-// https://firebase.google.com/docs/web/setup#available-libraries
+import { getAnalytics } from "firebase/analytics";
+import { getAuth } from "firebase/auth"; // 1. THÊM DÒNG NÀY
 
-// Your web app's Firebase configuration
 const firebaseConfig = {
-  apiKey: "AIzaSyABEv_uDYkb7RBqkTb5B-9qD117WTup9c8",
-  authDomain: "sign-in-a2a59.firebaseapp.com",
-  projectId: "sign-in-a2a59",
-  storageBucket: "sign-in-a2a59.appspot.com",
-  messagingSenderId: "982383966074",
-  appId: "1:982383966074:web:d13f2164f3c2b17d2648c3",
+  apiKey: "AIzaSyBrnussR7BWoeNmYGcRyQxYBJE7ShC7nF0",
+  authDomain: "n19vn-e8402.firebaseapp.com",
+  projectId: "n19vn-e8402",
+  storageBucket: "n19vn-e8402.firebasestorage.app",
+  messagingSenderId: "1074897753306",
+  appId: "1:1074897753306:web:74ae3ec71d57823e59c1e3",
+  measurementId: "G-CC6H9P3BDG"
 };
 
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
-export const auth = getAuth(app);
+const analytics = getAnalytics(app);
+
+// 2. THÊM DÒNG NÀY ĐỂ EXPORT BIẾN auth RA NGOÀI
+export const auth = getAuth(app); 
+export default app;

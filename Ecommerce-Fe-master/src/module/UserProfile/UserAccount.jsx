@@ -9,17 +9,14 @@ import FieldCheckboxes from "../../components/field/FieldCheckboxes";
 import Radio from "../../components/checkbox/Radio";
 import * as yup from "yup";
 import { yupResolver } from "@hookform/resolvers/yup";
-import moment from "moment";
 import ImageUpload from "../../components/images/ImageUpload";
 import axios from "axios";
 import { toast } from "react-toastify";
 import { useDispatch, useSelector } from "react-redux";
-import { getUser, refresh, updateInfoUser } from "../../redux/auth/userSlice";
-import { action_status } from "../../utils/constants/status";
+import { getUser, updateInfoUser } from "../../redux/auth/userSlice";
 import Skeleton from "../../components/skeleton/Skeleton";
 import { useNavigate } from "react-router-dom";
 
-const today = moment();
 const schema = yup.object({
   fullname: yup
     .string()
@@ -32,73 +29,52 @@ const schema = yup.object({
     .matches(/(84|0[3|5|7|8|9])+([0-9]{8})\b/, {
       message: "Định dạng số điện thoại không đúng",
     }),
-  dateOfBirth: yup
-    .string()
-    .required("Vui lòng chọn ngày sinh")
-    .nullable()
-    .max(today, "Ngày sinh không hợp lệ"),
+  dateOfBirth: yup.string().required("Vui lòng chọn ngày sinh").nullable(),
   gender: yup.string().oneOf(["nam", "nữ", "khác"], "Vui lòng chọn giới tính"),
 });
 
-const Gender = {
-  NAM: "nam",
-  NU: "nữ",
-  Diff: "khác",
-};
+const Gender = { NAM: "nam", NU: "nữ", Diff: "khác" };
 
 const UserAccount = () => {
+  const dispatch = useDispatch();
+  const navigate = useNavigate();
+  const { current } = useSelector((state) => state.user); 
+
   const {
     control,
     watch,
     setValue,
     handleSubmit,
     getValues,
-    reset,
     formState: { isSubmitting, isValid, errors },
   } = useForm({
     mode: "onChange",
     resolver: yupResolver(schema),
+    defaultValues: {
+      fullname: current?.name || "",
+      email: current?.email || "",
+      sdt: current?.phone || "",
+      dateOfBirth: current?.dateOfBirth || "",
+      gender: current?.gender || Gender.NAM,
+    },
   });
 
-  const dispatch = useDispatch();
-  const navigate = useNavigate();
-
-  const { user, update, status, current } = useSelector((state) => state.user);
-
   const watchGender = watch("gender");
-  const [image, setImage] = useState("");
-  const [progress, setProgress] = useState();
+  const [image, setImage] = useState(current?.avatar || "");
+  const [progress, setProgress] = useState(0);
 
   useEffect(() => {
-    if (current === null) {
+    if (!current) {
       toast.dismiss();
       toast.warning("Vui lòng đăng nhập");
       navigate("/sign-in");
     }
-  }, [current]);
-
-  useEffect(() => {
-    if (update) {
-      dispatch(getUser());
-      dispatch(refresh());
-    }
-  }, [update]);
+  }, [current, navigate]);
 
   useEffect(() => {
     dispatch(getUser());
-  }, []);
-
-  useEffect(() => {
-    reset({
-      fullname: user?.name,
-      image: user?.avatar,
-      email: user?.email,
-      sdt: user?.phone,
-      dateOfBirth: user?.dateOfBirth,
-      gender: user?.gender,
-    });
-    setImage(getValues("image"));
-  }, [status]);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }, [dispatch]);
 
   const handleSelectImage = async (e) => {
     const file = e.target.files[0];
@@ -110,43 +86,35 @@ const UserAccount = () => {
   const handleUpLoadImage = async (file) => {
     const formData = new FormData();
     formData.append("image", file);
-
     const response = await axios({
       method: "post",
       data: formData,
-      headers: {
-        "Content-Type": "multipart/form-data",
-      },
+      headers: { "Content-Type": "multipart/form-data" },
       url: "https://api.imgbb.com/1/upload?key=faf46b849aaf25c8587aec2835f05b26",
-      onUploadProgress: (data) => {
-        setProgress(Math.round((100 * data.loaded) / data.total));
-      },
+      onUploadProgress: (data) => setProgress(Math.round((100 * data.loaded) / data.total)),
     });
     return response.data.data.url;
   };
 
-  useEffect(() => {
-    window.scrollTo({
-      top: 0,
-      behavior: "smooth",
-    });
-  }, []);
-
-  const handleUpdate = (values) => {
+  const handleUpdate = async (values) => { 
     if (!isValid) return;
-    const cloneValues = { ...values };
-    cloneValues.gender = getValues("gender");
-    cloneValues.dateOfBirth = getValues("dateOfBirth");
-    cloneValues.avatar = image;
-    cloneValues.name = values.fullname;
-    cloneValues.phone = values.sdt;
+    const cloneValues = {
+      name: values.fullname,
+      phone: values.sdt,
+      gender: getValues("gender"),
+      dateOfBirth: getValues("dateOfBirth"),
+      avatar: image,
+    };
+    
     try {
-      dispatch(updateInfoUser(cloneValues));
+      await dispatch(updateInfoUser(cloneValues)).unwrap(); 
+      
       toast.dismiss();
-      toast.success("Cập nhật thông tin thành công", { pauseOnHover: false });
+      toast.success("Cập nhật thông tin thành công");
     } catch (error) {
       toast.dismiss();
-      toast.error(error.message);
+      toast.error(error.message || "Cập nhật thất bại. Vui lòng kiểm tra lại API!"); 
+      console.log("Lỗi thật sự từ Backend:", error);
     }
   };
 
@@ -155,146 +123,80 @@ const UserAccount = () => {
     setProgress(0);
   };
 
+  if (!current) return (
+    <div className="pb-16 bg-white p-5 rounded-lg">
+        <Skeleton className="w-36 h-36 rounded-full mx-auto" />
+        <Skeleton className="w-full h-10 mt-5" />
+    </div>
+  );
+
   return (
-    <>
-      <div className="bg-white rounded-lg">
-        <DashboardHeading
-          title="Thông tin tài khoản"
-          className="px-5 py-5"
-        ></DashboardHeading>
-        {status === action_status.LOADING && (
-          <div className="pb-16">
-            <Field>
-              <Skeleton className="w-[100px] h-4 rounded-lg" />
-              <Skeleton className="w-36 h-36 rounded-full mx-auto" />
-            </Field>
-            <Field>
-              <Skeleton className="w-[100px] h-4 rounded-lg" />
-              <Skeleton className="w-full h-4 rounded-md" />
-            </Field>
-            <Field>
-              <Skeleton className="w-[100px] h-4 rounded-lg" />
-              <Skeleton className="w-full h-4 rounded-md" />
-            </Field>
-            <Field>
-              <Skeleton className="w-[100px] h-4 rounded-lg" />
-              <Skeleton className="w-full h-4 rounded-md" />
-            </Field>
-            <Field>
-              <Skeleton className="w-[100px] h-4 rounded-lg" />
-              <Skeleton className="w-full h-4 rounded-md" />
-            </Field>
-            <Field>
-              <Skeleton className="w-[100px] h-4 rounded-lg" />
-              <div className="flex items-center gap-x-5">
-                <Skeleton className="w-6 h-6 rounded-full" />
-                <Skeleton className="w-6 h-6 rounded-full" />
-                <Skeleton className="w-6 h-6 rounded-full" />
-              </div>
-            </Field>
-            <Skeleton className="w-[200px] h-[40px] rounded-lg mx-auto mt-10" />
-          </div>
-        )}
-        {status === action_status.SUCCEEDED && (
-          <form className="pb-16" onSubmit={handleSubmit(handleUpdate)}>
-            <Field>
-              <Label>Image</Label>
-              <ImageUpload
-                onChange={handleSelectImage}
-                className="mx-auto"
-                progress={progress}
-                image={image}
-                handleDeleteImage={handleDeleteImage}
-              ></ImageUpload>
-            </Field>
+    <div className="bg-white rounded-lg pb-16">
+      <DashboardHeading title="Thông tin tài khoản" className="px-5 py-5" />
+      
+      <form className="px-5" onSubmit={handleSubmit(handleUpdate)}>
+        <Field>
+          <Label>Ảnh đại diện</Label>
+          <ImageUpload
+            onChange={handleSelectImage}
+            className="mx-auto"
+            progress={progress}
+            image={image}
+            handleDeleteImage={handleDeleteImage}
+          />
+        </Field>
 
-            <Field>
-              <Label htmlFor="fullname">Họ tên</Label>
-              <Input name="fullname" control={control} type="text"></Input>
-              {errors.fullname && (
-                <p className="text-red-500 text-base font-medium">
-                  {errors.fullname?.message}
-                </p>
-              )}
-            </Field>
+        <Field>
+          <Label htmlFor="fullname">Họ tên</Label>
+          <Input name="fullname" control={control} type="text" />
+          {errors.fullname && <p className="text-red-500 text-sm">{errors.fullname?.message}</p>}
+        </Field>
 
-            <Field>
-              <Label htmlFor="fullname">Email</Label>
-              <Input name="email" control={control} disabled></Input>
-            </Field>
+        <Field>
+          <Label htmlFor="email">Email</Label>
+          <Input name="email" control={control} disabled className="bg-gray-100" />
+        </Field>
 
-            <Field>
-              <Label htmlFor="sdt">Số điện thoại</Label>
-              <Input name="sdt" type="number" control={control}></Input>
-              {errors.sdt && (
-                <p className="text-red-500 text-base font-medium">
-                  {errors.sdt?.message}
-                </p>
-              )}
-            </Field>
+        <Field>
+          <Label htmlFor="sdt">Số điện thoại</Label>
+          <Input name="sdt" type="number" control={control} />
+          {errors.sdt && <p className="text-red-500 text-sm">{errors.sdt?.message}</p>}
+        </Field>
 
-            <Field>
-              <Label htmlFor="dateOfBirth">Ngày sinh</Label>
-              <Input name="dateOfBirth" type="date" control={control}></Input>
-              {errors.dateOfBirth && (
-                <p className="text-red-500 text-base font-medium">
-                  {errors.dateOfBirth?.message}
-                </p>
-              )}
-            </Field>
+        <Field>
+          <Label htmlFor="dateOfBirth">Ngày sinh</Label>
+          <Input name="dateOfBirth" type="date" control={control} />
+          {errors.dateOfBirth && <p className="text-red-500 text-sm">{errors.dateOfBirth?.message}</p>}
+        </Field>
 
-            <Field>
-              <FieldCheckboxes>
-                <Label htmlFor="gender">Giới tính</Label>
-                <Radio
-                  name="gender"
-                  control={control}
-                  checked={watchGender === Gender.NAM}
-                  value={Gender.NAM}
-                  onClick={() => setValue("gender", "nam")}
-                >
-                  Nam
-                </Radio>
-                <Radio
-                  name="gender"
-                  control={control}
-                  checked={watchGender === Gender.NU}
-                  value={Gender.NU}
-                  onClick={() => setValue("gender", "nu")}
-                >
-                  Nữ
-                </Radio>
-                <Radio
-                  name="gender"
-                  control={control}
-                  checked={watchGender === Gender.Diff}
-                  value={Gender.Diff}
-                  onClick={() => setValue("gender", "khac")}
-                >
-                  Khác
-                </Radio>
-              </FieldCheckboxes>
-              {errors.gender && (
-                <p className="text-red-500 text-base font-medium">
-                  {errors.gender?.message}
-                </p>
-              )}
-            </Field>
+        <Field>
+          <FieldCheckboxes>
+            <Label htmlFor="gender">Giới tính</Label>
+            <Radio name="gender" control={control} checked={watchGender === Gender.NAM} onChange={() => setValue("gender", Gender.NAM)}>
+              Nam
+            </Radio>
+            <Radio name="gender" control={control} checked={watchGender === Gender.NU} onChange={() => setValue("gender", Gender.NU)}>
+              Nữ
+            </Radio>
+            <Radio name="gender" control={control} checked={watchGender === Gender.Diff} onChange={() => setValue("gender", Gender.Diff)}>
+              Khác
+            </Radio>
+          </FieldCheckboxes>
+          {errors.gender && <p className="text-red-500 text-sm">{errors.gender?.message}</p>}
+        </Field>
 
-            <Button
-              kind="primary"
-              className="mx-auto w-[200px] mt-10"
-              type="submit"
-              disabled={isSubmitting}
-              isLoading={isSubmitting}
-              height="50px"
-            >
-              Cập nhật thông tin
-            </Button>
-          </form>
-        )}
-      </div>
-    </>
+        <Button
+          kind="primary"
+          className="mx-auto w-[200px] mt-10"
+          type="submit"
+          disabled={isSubmitting}
+          isLoading={isSubmitting}
+          height="50px"
+        >
+          Cập nhật thông tin
+        </Button>
+      </form>
+    </div>
   );
 };
 

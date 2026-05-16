@@ -1,20 +1,37 @@
 import React from "react";
-import { useDispatch } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
+import { toast } from "react-toastify";
 import { addToCart } from "../../../redux/cart/cartSlice";
 import { formatPrice } from "../../../utils/formatPrice";
+
 const SubInformationProduct = ({ data }) => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
+  const { current } = useSelector((state) => state.user);
+
+  const checkLogin = () => {
+    if (!current) {
+      toast.dismiss();
+      toast.warning("Vui lòng đăng nhập để thêm sản phẩm vào giỏ hàng!");
+      navigate("/sign-in");
+      return false;
+    }
+    return true;
+  };
+
   const handleAddCart = () => {
+    if (!checkLogin()) return;
     const action = addToCart({
       id: data._id,
       product: data,
       quantity: 1,
     });
     dispatch(action);
+    toast.success("Đã thêm sản phẩm vào giỏ hàng!");
   };
   const handleBuy = () => {
+    if (!checkLogin()) return;
     const action = addToCart({
       id: data._id,
       product: data,

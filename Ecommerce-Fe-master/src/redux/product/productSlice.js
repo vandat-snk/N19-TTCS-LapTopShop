@@ -25,7 +25,7 @@ export const getProduct = createAsyncThunk(
   async (payload) => {
     let query = `page=${payload.page}&limit=${payload.limit}`;
     const response = await productApi.getAllProduct(query);
-    return response.data.data;
+    return response.data;
   }
 );
 
@@ -79,8 +79,8 @@ const productSlice = createSlice({
     [getProduct.fulfilled]: (state, action) => {
       console.log("payload:", action.payload);
       state.status = action_status.SUCCEEDED;
-      state.product = action.payload.data;
-      state.totalPage = action.payload.totalPage;
+      state.product = action.payload?.data || [];
+      state.totalPage = action.payload?.totalPage || 1;
     },
     [getProduct.rejected]: (state, action) => {
       state.status = action_status.FAILED;
@@ -98,10 +98,10 @@ const productSlice = createSlice({
     [getProductFilter.pending]: (state, action) => {
       state.statusFilter = action_status.LOADING;
     },
-    [getProduct.fulfilled]: (state, action) => {
-      console.log("payload:", action.payload);
-      state.status = action_status.SUCCEEDED;
-      state.product = action.payload;
+    [getProductFilter.fulfilled]: (state, action) => {
+      state.statusFilter = action_status.SUCCEEDED;
+      state.productFilter = action.payload?.data || [];
+      state.totalPageFilter = action.payload?.totalPage || 1;
     },
     [getProductFilter.rejected]: (state, action) => {
       state.statusFilter = action_status.FAILED;
