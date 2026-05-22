@@ -6,6 +6,12 @@ const PaymentCash = () => {
   const data = JSON.parse(localStorage.getItem("order"));
   const navigate = useNavigate();
 
+  const originalPrice =
+    data?.cart?.reduce((sum, item) => sum + item.quantity * item.price, 0) || 0;
+
+  const finalPrice = data?.total || 0;
+
+  const discountPrice = originalPrice - finalPrice;
   useEffect(() => {
     window.scrollTo({
       top: 0,
@@ -50,13 +56,22 @@ const PaymentCash = () => {
             <span>Mã đơn hàng:</span>
             <span>{data?.id}</span>
           </div>
+
           <div className="flex items-center text-xl justify-between">
             <span>Giá trị đơn hàng:</span>
-            <span>{formatPrice(data?.total)}</span>
+            <span>{formatPrice(originalPrice)}</span>
           </div>
+
+          {discountPrice > 0 && (
+            <div className="flex items-center text-xl justify-between text-green-600">
+              <span>Giảm giá đơn đầu tiên:</span>
+              <span>-{formatPrice(discountPrice)}</span>
+            </div>
+          )}
+
           <div className="flex items-center text-xl justify-between">
             <span>Còn phải thanh toán:</span>
-            <span>{formatPrice(data?.total)}</span>
+            <span>{formatPrice(finalPrice)}</span>
           </div>
         </div>
         <button

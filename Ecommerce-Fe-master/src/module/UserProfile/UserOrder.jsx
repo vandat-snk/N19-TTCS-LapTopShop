@@ -27,6 +27,12 @@ const UserOrder = () => {
   const [state, setState] = useState(params.status);
   const [page, setPage] = useState(1);
 
+  const getFirstProductTitle = (item) => {
+    const firstItem = item?.cart?.[0];
+    const title = firstItem?.title || firstItem?.product?.title || "Sản phẩm";
+    return title.length > 50 ? title.slice(0, 50) : title;
+  };
+
   useEffect(() => {
     if (current === null) {
       toast.dismiss();
@@ -229,7 +235,7 @@ const UserOrder = () => {
                               &nbsp;&nbsp;
                               {format(new Date(item?.createdAt), "dd/MM/yyyy")}
                             </td>
-                            <td>{item.cart[0].title.slice(0, 50)}</td>
+                            <td>{getFirstProductTitle(item)}</td>
                             <td>{formatPrice(item.totalPrice)}</td>
                             {item?.status === "Processed" && (
                               <td>
@@ -282,7 +288,7 @@ const UserOrder = () => {
                               &nbsp;&nbsp;
                               {format(new Date(item?.createdAt), "dd/MM/yyyy")}
                             </td>
-                            <td>{item.cart[0].title.slice(0, 50)}</td>
+                            <td>{getFirstProductTitle(item)}</td>
                             <td>{formatPrice(item.totalPrice)}</td>
                             <td>
                               <span className="p-2 rounded-lg text-white bg-orange-400">
@@ -312,7 +318,7 @@ const UserOrder = () => {
                               &nbsp;&nbsp;
                               {format(new Date(item?.createdAt), "dd/MM/yyyy")}
                             </td>
-                            <td>{item.cart[0].title.slice(0, 50)}</td>
+                            <td>{getFirstProductTitle(item)}</td>
                             <td>{formatPrice(item.totalPrice)}</td>
 
                             <td>
@@ -343,7 +349,7 @@ const UserOrder = () => {
                               &nbsp;&nbsp;
                               {format(new Date(item?.createdAt), "dd/MM/yyyy")}
                             </td>
-                            <td>{item.cart[0].title.slice(0, 50)}</td>
+                            <td>{getFirstProductTitle(item)}</td>
                             <td>{formatPrice(item.totalPrice)}</td>
 
                             <td>

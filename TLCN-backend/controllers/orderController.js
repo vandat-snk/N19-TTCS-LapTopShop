@@ -41,8 +41,10 @@ exports.createOrder = catchAsync(async (req, res, next) => {
       }
 
       // LẤY GIÁ TỪ DATABASE: Ưu tiên giá promotion, nếu không có thì lấy price
-      const finalItemPrice = product.promotion ? product.promotion : product.price;
-      
+      const finalItemPrice = product.promotion
+        ? product.promotion
+        : product.price;
+
       calculatedTotalPrice += finalItemPrice * item.quantity;
 
       // Trả về Object để nhúng (Embed) vào đơn hàng
@@ -51,34 +53,57 @@ exports.createOrder = catchAsync(async (req, res, next) => {
         title: product.title,
         image: product.images[0],
         quantity: item.quantity,
-        price: finalItemPrice // Giá đã được chốt cứng tại Server
+        price: finalItemPrice, // Giá đã được chốt cứng tại Server
       };
     })
   );
 
   // 3. Xử lý giảm giá 15% cho đơn đầu tiên
-  const orderHistoryCount = await Order.countDocuments({ 
+  const orderHistoryCount = await Order.countDocuments({
     user: req.user.id,
-    status: { $ne: "Cancelled" } 
+    status: { $ne: "Cancelled" },
   });
 
   if (orderHistoryCount === 0) {
-    calculatedTotalPrice = calculatedTotalPrice * 0.85; 
-    console.log(`Đơn hàng đầu tiên của ${req.user.name}, đã áp dụng giảm giá 15%!`);
+    calculatedTotalPrice = calculatedTotalPrice * 0.85;
+    console.log(
+      `Đơn hàng đầu tiên của ${req.user.name}, đã áp dụng giảm giá 15%!`
+    );
   }
 
   // 4. Ghi đè dữ liệu an toàn vào req.body trước khi lưu
   req.body.cart = realCart;
   req.body.totalPrice = calculatedTotalPrice;
 
+  if (req.body.receiver || req.body.phone || req.body.address) {
+    req.body.shippingDetails = {
+      receiver: req.body.receiver,
+      phone: req.body.phone,
+      address: req.body.address,
+    };
+  }
+
+  if (req.body.payments) {
+    req.body.paymentInfo = {
+      method: req.body.payments,
+      status: "pending",
+    };
+  }
+
   // 5. Tạo đơn hàng
   const doc = await Order.create(req.body);
+
+  const populatedDoc = await Order.findById(doc._id)
+    .populate("user")
+    .populate("cart.product");
 
   res.status(201).json({
     status: "success",
     data: {
-      data: doc,
+      data: populatedDoc,
     },
+    id: doc._id,
+    totalPrice: doc.totalPrice,
   });
 });
 
