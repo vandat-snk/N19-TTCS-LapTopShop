@@ -224,8 +224,8 @@ async function retrieveProducts(message, keywords) {
           index: "vector_index",
           path: "embedding",
           queryVector: queryVector,
-          numCandidates: 100,
-          limit: 15,
+          numCandidates: 200,
+          limit: 40,
         }
       },
       {
@@ -321,8 +321,9 @@ async function retrieveProducts(message, keywords) {
   let regexConditions = [];
   if (textKeywords.length > 0) {
     textKeywords.forEach((kw) => {
-      regexConditions.push({ title: { $regex: kw, $options: "i" } });
-      regexConditions.push({ "specs.demand": { $regex: kw, $options: "i" } });
+      const safeKw = kw.replace(/[-[\]{}()*+?.,\\^$|#\s]/g, "\\$&");
+      regexConditions.push({ title: { $regex: safeKw, $options: "i" } });
+      regexConditions.push({ "specs.demand": { $regex: safeKw, $options: "i" } });
     });
     const regexResults = await Product.find({
       ...filter,
@@ -485,6 +486,10 @@ exports.sendMessage = catchAsync(async (req, res, next) => {
   try {
     const ollamaUrl = process.env.OLLAMA_URL || "http://localhost:11434";
     const chatModel = process.env.OLLAMA_CHAT_MODEL || "laptop-chatbot";
+    
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 40000); // 40 seconds timeout
+    
     const response = await fetch(`${ollamaUrl}/api/chat`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -493,9 +498,15 @@ exports.sendMessage = catchAsync(async (req, res, next) => {
         messages: messages,
         stream: true,
       }),
+      signal: controller.signal
     });
+    clearTimeout(timeoutId);
 
-    if (!response.ok) throw new Error("Ollama API failed");
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error(`Ollama Response Error: ${response.status} - ${errorText}`);
+      throw new Error(`Ollama API failed: ${errorText}`);
+    }
 
     const reader = response.body.getReader();
     const decoder = new TextDecoder("utf-8");
