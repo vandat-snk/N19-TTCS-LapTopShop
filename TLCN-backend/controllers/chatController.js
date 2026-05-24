@@ -109,7 +109,8 @@ Quy tắc trả lời:
 - Không bịa thông tin sản phẩm, chỉ dùng dữ liệu được cung cấp
 - Khi đề cập sản phẩm, format giá tiền dạng VNĐ (ví dụ: 15.990.000đ)
 - Trả lời ngắn gọn, đi vào trọng tâm
-- Nếu khách hàng hỏi những vấn đề không liên quan đến laptop, công nghệ hoặc cửa hàng, hãy từ chối lịch sự`;
+- Nếu khách hàng hỏi những vấn đề không liên quan đến laptop, công nghệ hoặc cửa hàng, hãy từ chối lịch sự
+- ĐẶC BIỆT: Khi khách hàng quyết định mua (chốt sale), hãy luôn dặn khách: "Vui lòng nhấn vào sản phẩm đang hiển thị ở bên dưới để xem chi tiết và tiến hành đặt hàng nhé!"`;
 
 function detectIntent(message) {
   const msg = message.toLowerCase();
@@ -366,29 +367,27 @@ async function retrieveOrders(userId) {
 
 // === FORMAT CONTEXT: Adapted for specs object ===
 function formatProductContext(products) {
-  if (!products || products.length === 0) return "Không tìm thấy sản phẩm phù hợp trong cửa hàng.";
+  if (!products || products.length === 0) return "Không tìm thấy sản phẩm phù hợp";
 
   return products
     .map((p, i) => {
-      const brandName = p.brand?.name || "N/A";
-      const catName = p.category?.name || "N/A";
+      const priceStr = p.promotion 
+        ? `${p.promotion.toLocaleString("vi-VN")}đ` 
+        : `${p.price?.toLocaleString("vi-VN")}đ`;
+        
       const s = p.specs || {};
-      return `[Sản phẩm ${i + 1}] ID: ${p._id}
-- Tên: ${p.title}
-- Giá: ${p.price?.toLocaleString("vi-VN")}đ${p.promotion ? ` (Giảm còn ${p.promotion?.toLocaleString("vi-VN")}đ)` : ""}
-- CPU: ${s.cpu || "N/A"}
-- RAM: ${s.ram || "N/A"}
-- Màn hình: ${s.screen || "N/A"}
-- Card đồ họa: ${s.graphicCard || "N/A"}
-- Ổ cứng: ${s.storage || "N/A"}
-- Pin: ${s.battery || "N/A"}
-- Thương hiệu: ${brandName}
-- Danh mục: ${catName}
-- Nhu cầu: ${s.demand || "N/A"}
-- Đánh giá: ${p.ratingsAverage || "N/A"}/5
-- Tồn kho: ${p.inventory || 0}`;
+      const descParts = [];
+      if (s.cpu) descParts.push(s.cpu);
+      if (s.ram) descParts.push(s.ram);
+      if (s.graphicCard && s.graphicCard.toLowerCase() !== 'onboard') descParts.push(s.graphicCard);
+      if (s.screen) descParts.push(s.screen);
+      if (s.storage) descParts.push(s.storage);
+      
+      const desc = descParts.length > 0 ? descParts.join(", ") : (p.category?.name || "Laptop");
+      
+      return `- Tên: ${p.title} | Giá: ${priceStr} | Mô tả: ${desc}`;
     })
-    .join("\n\n");
+    .join("\n");
 }
 
 function formatOrderContext(orders) {
@@ -438,11 +437,33 @@ exports.sendMessage = catchAsync(async (req, res, next) => {
   let context = "";
   let productIds = [];
 
+  // Lấy tin nhắn phản hồi gần nhất của Bot để biết Bot đang tư vấn máy gì
+  const lastAssistantMsg = await ChatMessage.findOne({
+    conversation: conversation._id,
+    role: "assistant",
+  }).sort({ createdAt: -1 }).lean();
+
+  const isShortReply = normMessage.length <= 30 && keywords.length === 0;
+  const isContinuation = ["có", "ok", "dạ", "vâng", "chốt", "lấy", "đúng", "tuyệt", "oke", "rồi", "máy này", "con này", "thế còn", "còn"].some(w => normMessage.includes(w));
+
   if (intent === "order") {
     const orders = await retrieveOrders(userId);
     context = `\n\n[DỮ LIỆU CỬA HÀNG]\n${formatOrderContext(orders)}`;
   } else if (intent === "policy") {
     context = "\n\n[DỮ LIỆU CỬA HÀNG]\nChính sách cửa hàng đã có trong phần hệ thống.";
+  } else if ((isShortReply || isContinuation) && lastAssistantMsg && lastAssistantMsg.productRefs && lastAssistantMsg.productRefs.length > 0) {
+    // RAG MEMORY: Nếu khách chỉ chat ngắn gọn tiếp nối, bốc lại chính xác con máy cũ nhồi vào não AI
+    const products = await Product.find({ _id: { $in: lastAssistantMsg.productRefs } })
+      .populate("brand category")
+      .lean();
+    
+    // Bảo toàn đúng thứ tự cũ
+    const sortedProducts = lastAssistantMsg.productRefs
+      .map(id => products.find(p => p._id.toString() === id.toString()))
+      .filter(Boolean);
+
+    context = `\n\n[DỮ LIỆU CỬA HÀNG]\n${formatProductContext(sortedProducts)}`;
+    productIds = sortedProducts.map((p) => p._id);
   } else {
     const products = await retrieveProducts(normMessage, keywords);
     context = `\n\n[DỮ LIỆU CỬA HÀNG]\n${formatProductContext(products)}`;
@@ -548,7 +569,21 @@ exports.sendMessage = catchAsync(async (req, res, next) => {
     }
 
     // Đảm bảo tin nhắn lưu vào DB không được để trống (tránh ValidationError)
-    const savedResponse = fullAiResponse.trim() || "Xin lỗi, hiện tại mình đang gặp lỗi xử lý. Bạn có thể hỏi lại được không?";
+    let savedResponse = fullAiResponse.trim() || "Xin lỗi, hiện tại mình đang gặp lỗi xử lý. Bạn có thể hỏi lại được không?";
+
+    // Post-processing: Ép AI chèn thêm câu kêu gọi click vào sản phẩm nếu đang chốt sale
+    const botTriggerWords = ["lên đơn", "chốt", "thanh toán", "đặt hàng", "gửi đơn", "lấy mẫu", "gửi bạn link"];
+    const userTriggerWords = ["chốt", "lấy con", "mua con", "mua máy", "lấy máy", "lấy em", "đặt con", "đặt hàng", "đặt máy"];
+    
+    const shouldAppendInstruction = 
+      botTriggerWords.some(w => savedResponse.toLowerCase().includes(w)) || 
+      userTriggerWords.some(w => message.toLowerCase().includes(w));
+    
+    if (shouldAppendInstruction) {
+      const instruction = "\n\n👉 **Vui lòng nhấn vào sản phẩm đang hiển thị ở bên dưới để xem chi tiết và tiến hành đặt hàng nhé!**";
+      res.write(`data: ${JSON.stringify({ chunk: instruction })}\n\n`);
+      savedResponse += instruction;
+    }
 
     await ChatMessage.create({
       conversation: conversation._id,

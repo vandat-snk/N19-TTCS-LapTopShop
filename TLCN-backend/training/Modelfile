@@ -1,4 +1,4 @@
-FROM ./laptop-chatbot-qwen7b-Q4_K_M.gguf
+FROM ./laptop-chatbot-qwen7b-merged.Q4_K_M.gguf
 
 TEMPLATE """{{- if .System -}}
 <|im_start|>system
@@ -34,7 +34,8 @@ Quy tắc trả lời:
 - Không bịa thông tin sản phẩm, chỉ dùng dữ liệu được cung cấp
 - Khi đề cập sản phẩm, format giá tiền dạng VNĐ (ví dụ: 15.990.000đ)
 - Trả lời ngắn gọn, đi vào trọng tâm
-- Nếu khách hàng hỏi những vấn đề không liên quan đến laptop, công nghệ hoặc cửa hàng, hãy từ chối lịch sự"""
+- Nếu khách hàng hỏi những vấn đề không liên quan đến laptop, công nghệ hoặc cửa hàng, hãy từ chối lịch sự
+- ĐẶC BIỆT: Khi khách hàng quyết định mua (chốt sale), hãy luôn dặn khách: "Vui lòng nhấn vào sản phẩm đang hiển thị ở bên dưới để xem chi tiết và tiến hành đặt hàng nhé!\"""
 
 PARAMETER temperature 0.3
 PARAMETER top_p 0.9

@@ -1,6 +1,5 @@
 import torch
 from unsloth import FastLanguageModel
-from datasets import load_dataset
 from trl import SFTTrainer
 from transformers import TrainingArguments
 from pathlib import Path
@@ -17,7 +16,10 @@ GRAD_ACCUM = 8
 LEARNING_RATE = 5e-5
 EPOCHS = 1
 OUTPUT_DIR = str(Path(__file__).resolve().parent / "laptop-chatbot-qwen7b")
-DATASET_FILE = str(Path(__file__).resolve().parent / "dataset.jsonl")
+
+# Sử dụng 2 tập Train và Val mới
+TRAIN_FILE = str(Path(__file__).resolve().parent / "train.jsonl")
+VAL_FILE = str(Path(__file__).resolve().parent / "val.jsonl")
 
 print("-" * 60)
 print("TIẾN TRÌNH HUẤN LUYỆN QWEN 2.5 7B CHO LAPTOP SHOP CHATBOT")
@@ -25,7 +27,8 @@ print("-" * 60)
 print(f"Mô hình nền: {MODEL_NAME}")
 print(f"VRAM của GPU: {torch.cuda.get_device_properties(0).total_memory/1e9:.1f}GB")
 print(f"Tham số: max_seq_length={MAX_SEQ_LENGTH}, batch={BATCH_SIZE}, grad_accum={GRAD_ACCUM}")
-print(f"Tệp dữ liệu: {DATASET_FILE}")
+print(f"Tập Train: {TRAIN_FILE}")
+print(f"Tập Val: {VAL_FILE}")
 print(f"Thư mục lưu trữ: {OUTPUT_DIR}")
 
 print("\nĐang tiến hành tải mô hình nền...")
@@ -52,28 +55,32 @@ model = FastLanguageModel.get_peft_model(
 )
 print(f"   Đã cấu hình LoRA thành công. VRAM đang sử dụng: {torch.cuda.memory_allocated()/1e9:.2f}GB")
 
-print(f"\nĐang tiến hành nạp tập dữ liệu huấn luyện từ: {DATASET_FILE}...")
-
 datasets.arrow_dataset.generate_fingerprint = lambda *args, **kwargs: "dummy_fingerprint_123"
 
-with open(DATASET_FILE, "r", encoding="utf-8") as f:
-    raw_data = [json.loads(line) for line in f]
+def prepare_dataset(file_path):
+    with open(file_path, "r", encoding="utf-8") as f:
+        raw_data = [json.loads(line) for line in f]
+    
+    formatted_data = []
+    for item in raw_data:
+        # Áp dụng template của Qwen2.5 cho từng tin nhắn trong hội thoại
+        text = tokenizer.apply_chat_template(item["messages"], tokenize=False, add_generation_prompt=False)
+        formatted_data.append({"text": text})
+    return Dataset.from_list(formatted_data)
 
-print("Đang chuẩn hóa dữ liệu theo cấu trúc chat template của Qwen2.5...")
-formatted_data = []
-for item in raw_data:
-    text = tokenizer.apply_chat_template(item["messages"], tokenize=False, add_generation_prompt=False)
-    formatted_data.append({"text": text})
-
-dataset = Dataset.from_list(formatted_data)
-print(f"   Đã chuẩn hóa thành công {len(dataset)} mẫu hội thoại.")
+print("\nĐang tiến hành nạp và chuẩn hóa tập dữ liệu...")
+train_dataset = prepare_dataset(TRAIN_FILE)
+val_dataset = prepare_dataset(VAL_FILE)
+print(f"   Tập Train: {len(train_dataset)} mẫu.")
+print(f"   Tập Val: {len(val_dataset)} mẫu.")
 
 print(f"\nBắt đầu thực hiện quá trình huấn luyện ({EPOCHS} epoch)...")
 
 trainer = SFTTrainer(
     model=model,
     tokenizer=tokenizer,
-    train_dataset=dataset,
+    train_dataset=train_dataset,
+    eval_dataset=val_dataset,
     dataset_text_field="text",
     max_seq_length=MAX_SEQ_LENGTH,
     args=TrainingArguments(
@@ -85,7 +92,9 @@ trainer = SFTTrainer(
         fp16=not torch.cuda.is_bf16_supported(),
         bf16=torch.cuda.is_bf16_supported(),
         logging_steps=10,
-        save_steps=200,
+        eval_strategy="steps",
+        eval_steps=50,      # Đánh giá trên tập validation mỗi 50 bước
+        save_steps=200,     # Lưu checkpoint mỗi 200 bước
         output_dir=OUTPUT_DIR,
         optim="adamw_8bit",
         seed=42,
