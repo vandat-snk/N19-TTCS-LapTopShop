@@ -56,15 +56,17 @@ router.get("/orders/:id", async (req, res, next) => {
     const data = await Order.findById(id);
     let total = 0;
     data.cart.forEach((value) => {
-      total += value.product.price * value.quantity;
+      total += value.price * value.quantity;
     });
     data.total = total;
     const theDate = new Date(Date.parse(data.createdAt));
     const date = theDate.toLocaleString();
     data.date = date;
     data.discount = total - data.totalPrice;
+    data.payments = data.paymentInfo ? data.paymentInfo.method : "N/A";
     res.status(200).render("orderDetail", { data ,title:"Order Detail"});
   } catch (error) {
+    console.error(error);
     res.status(200).render("404");
   }
 });
