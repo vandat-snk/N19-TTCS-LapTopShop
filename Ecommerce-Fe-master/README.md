@@ -1,66 +1,178 @@
 # Xây dựng và phát triển website bán laptop N19.VN
 
 ### Mô tả dự án:
-Dự án là một trang web bán hàng laptop trực tuyến, giúp người dùng tìm kiếm và mua các sản phẩm laptop phù hợp với nhu cầu của họ. Trang web này cung cấp các tính năng như:
-- Đăng nhập, đăng ký và xác thực tài khoản qua gmail đăng ký.
-- Hỗ trợ đăng nhập bên thứ 2 là Google.
-- Quên mật khẩu.
-- Quản lý thông tin cá nhân: thông tin cá nhân, quản lý địa chỉ và người giao nhận hàng, quản lý đơn hàng, cập nhật lại mật khẩu.
-- Xem tất cả sản phẩm và chi tiết từng sản phẩm.
-- Đánh giá sao và nhận xét sau khi mua hàng thành công.
-- Hỏi đáp về sản phẩm: thích, bỏ thích, trả lời, thêm, sửa, xóa bài hỏi đáp.
-- Tìm kiếm bằng từ khóa và tìm kiếm nâng cao: lọc theo khoảng giá, lọc theo tên sản phẩm, màu sắc, cấu hình, nhu cầu.
-- So sánh thông số giữa 2 sản phẩm.
-- Hỗ trợ hai hình thức thanh toán: paypal và trả tiền khi nhận hàng thành công.
 
-### Công nghệ sử dụng:
-- FrontEnd: ReactJS.
-- BackEnd: NodeJS và ExpressJS.
-- Database: MonogoDB.
+## Giới thiệu
 
-### Cách cài đặt:
-- Clone repository này bên phía FrontEnd và [Link github bên server](https://github.com/nvh2312/TLCN)
-- Sau khi clone 2 repository này về:
-  - cd vào repository bên phía FrontEnd gõ lệnh `npm i` để cài Node_Module sau khi cài sau gõ lệnh `npm run dev` để chạy.
-  - cd vào repository bên phía BackEnd gõ lệnh `npm i` để cài Node_Module sau khi cài sau gõ lệnh `npm start` để chạy.
+LapTopShop là hệ thống thương mại điện tử chuyên bán laptop. Dự án bao gồm một cổng mua sắm dành cho người dùng cuối và một trang quản trị nội bộ, cùng với chatbot AI được fine-tune riêng trên dữ liệu sản phẩm để tư vấn khách hàng theo thời gian thực.
 
-### Link project đưa lên hosting
-- Bên FrontEnd: [https://hctech.onrender.com/](https://hctech.onrender.com/)
+Tính năng nổi bật
+🛒 Phía người dùng (Customer)
+
+    Đăng ký / Đăng nhập (Email + Google OAuth2)
+        Xác thực tài khoản qua email, đặt lại mật khẩu
+        Trang chủ với banner slider, danh sách sản phẩm nổi bật
+        Tìm kiếm & lọc nâng cao (theo hãng, giá, cấu hình, ...)
+        Trang chi tiết sản phẩm, so sánh sản phẩm
+        Giỏ hàng, nhập địa chỉ giao hàng
+        Thanh toán: COD, PayPal, VNPay, Số dư tài khoản
+        Quản lý đơn hàng cá nhân
+        Đánh giá & bình luận sản phẩm
+        AI Chatbot tư vấn sản phẩm
+
+## Cấu trúc thư mục
+
+Ecommerce-Fe-master/
+├── public/                    # Static assets (ảnh, banner, logo)
+│   └── images/
+│       └── laptops/           # Ảnh sản phẩm mẫu
+├── src/
+│   ├── api/                   # Cấu hình Axios + các hàm gọi API
+│   │   ├── axiosClient.js     # Axios instance + interceptors
+│   │   ├── userApi.js
+│   │   ├── productApi.js
+│   │   ├── orderApi.js
+│   │   ├── reviewApi.js
+│   │   ├── commentApi.js
+│   │   └── chatApi.js
+│   ├── components/            # Các component dùng chung
+│   │   ├── header/
+│   │   ├── footer/
+│   │   ├── navbar/
+│   │   └── Chatbot/
+│   ├── module/                # Các module theo chức năng
+│   │   ├── cart/              # Giỏ hàng
+│   │   ├── dashboard/         # Layout trang tài khoản (sidebar)
+│   │   ├── feedback/          # Đánh giá & nhận xét
+│   │   ├── filter/            # Lọc sản phẩm
+│   │   ├── payment/           # Thanh toán
+│   │   ├── product/           # Hiển thị sản phẩm
+│   │   └── UserProfile/       # Quản lý tài khoản
+│   ├── page/                  # Các trang chính (route level)
+│   │   ├── HomePage.jsx
+│   │   ├── ProductFilterPage.jsx
+│   │   ├── ProductDetail.jsx
+│   │   ├── SignInPage.jsx
+│   │   ├── SignUpPage.jsx
+│   │   ├── VerifyPage.jsx
+│   │   ├── ForgotPasswordPage.jsx
+│   │   ├── ResetPasswordPage.jsx
+│   │   └── NotFoundPage.jsx
+│   ├── redux/                 # Redux store & slices
+│   │   ├── auth/              # userSlice, addressSlice
+│   │   ├── cart/              # cartSlice
+│   │   ├── feedback/          # feedbackSlice, commentSlice
+│   │   ├── order/             # orderSlice
+│   │   ├── product/           # productSlice
+│   │   └── store.js
+│   ├── styles/                # File SCSS/CSS toàn cục
+│   ├── utils/                 # Hàm tiện ích & hằng số
+│   │   ├── constants/         # key.js, status.js, storage-keys.js
+│   │   ├── formatPrice.js
+│   │   └── calculateScore.js
+│   └── App.jsx                # Route chính của ứng dụng
+├── index.html
+├── vite.config.js
+├── tailwind.config.cjs
+└── package.json
+
+## Hướng dẫn cài đặt
+
+1. Clone repository
+
+- git clonhttps://github.com/huyhcm2k5it/D23CQCN02_Nhom05_DOANCUOIKI_NMCNPM
+- `cd Ecommerce-Fe-master`
+
+2. Cài đặt dependencies
+   `npm install`
+3. Tạo file môi trường
+   Tạo file .env ở thư mục gốc (xem phần Biến môi trường).
+4. Chạy ở chế độ development
+   `npm run dev`
+   Ứng dụng sẽ chạy tại http://localhost:5173
+
+## Biến môi trường
+
+Tạo file .env tại thư mục gốc với nội dung sau:
+
+    VITE_API_URL=http://127.0.0.1:5000
+        VITE_PAYPAL_CLIENT_ID=your_paypal_client_id
+
+    VITE_FIREBASE_API_KEY=your_firebase_api_key
+        VITE_FIREBASE_AUTH_DOMAIN=your_project.firebaseapp.com
+        VITE_FIREBASE_PROJECT_ID=your_project_id
+
+    VITE_STREAM_API_KEY=your_stream_api_key
+
+## Các trang chính
+
+/                              # Trang chủ
+├── sign-in                    # Đăng nhập
+├── sign-up                    # Đăng ký
+├── verify                     # Xác thực email
+├── forgot-password            # Quên mật khẩu
+├── reset-password/:token      # Đặt lại mật khẩu
+├── product                    # Danh sách & lọc sản phẩm
+├── :slug/:id                  # Chi tiết sản phẩm
+├── cart                       # Giỏ hàng
+├── checkout                   # Trang thanh toán
+└── account                    # Thông tin tài khoản
+    ├── orders                 # Lịch sử đơn hàng
+    │   └── :id                # Chi tiết đơn hàng
+    ├── address                # Quản lý địa chỉ
+    └── reset-password         # Cập nhật mật khẩu
 
 ### Kết quả đạt được
-#### Trang chủ
-![Trang chủ](https://res.cloudinary.com/dbekkzxtt/image/upload/v1677837972/Screenshot_from_2023-03-03_16-59-45_m3x8bs.png)
-#### Trang đăng nhập
-![Trang đăng nhập](https://res.cloudinary.com/dbekkzxtt/image/upload/v1677837969/Screenshot_from_2023-03-03_16-59-49_orzmfq.png)
-#### Trang đăng ký tài khoản
-![Trang đăng ký](https://res.cloudinary.com/dbekkzxtt/image/upload/v1677837968/Screenshot_from_2023-03-03_16-59-54_cs7fgk.png)
-#### Trang quên mật khẩu
-![Trang quên mật khẩu](https://res.cloudinary.com/dbekkzxtt/image/upload/v1677837969/Screenshot_from_2023-03-03_16-59-58_o56yw4.png)
-#### Trang thông tin tài khoản
-![Trang thông tin tài khoản](https://res.cloudinary.com/dbekkzxtt/image/upload/v1677837967/Screenshot_from_2023-03-03_17-02-57_nid6hv.png)
-#### Trang quản lý đơn hàng
-![Trang quản lý đơn hàng](https://res.cloudinary.com/dbekkzxtt/image/upload/v1677837967/Screenshot_from_2023-03-03_17-03-13_s0ly0q.png)
-#### Trang chi tiết đơn hàng
-![Trang chi tiết đơn hàng](https://res.cloudinary.com/dbekkzxtt/image/upload/v1677837967/Screenshot_from_2023-03-03_17-03-18_zp1yfs.png)
-#### Trang quản lý thông tin giao nhận hàng
-![Trang quản lý thông tin giao nhận hàng](https://res.cloudinary.com/dbekkzxtt/image/upload/v1677837967/Screenshot_from_2023-03-03_17-03-25_bptpla.png)
-#### Trang cập nhật mật khẩu
-![Trang cập nhật mật khẩu](https://res.cloudinary.com/dbekkzxtt/image/upload/v1677837966/Screenshot_from_2023-03-03_17-03-37_ep9nht.png)
-#### Trang lọc sản phẩm nâng cao
-![Trang lọc sản phẩm nâng cao](https://res.cloudinary.com/dbekkzxtt/image/upload/v1677837970/Screenshot_from_2023-03-03_17-00-09_btplie.png)
-#### Trang giỏ hàng
-![Trang giỏ hàng](https://res.cloudinary.com/dbekkzxtt/image/upload/v1677837968/Screenshot_from_2023-03-03_17-02-43_trks35.png)
-#### Chức năng đánh giá sao và nhận xét
-![Đánh giá sao và nhận xét](https://firebasestorage.googleapis.com/v0/b/test-8c816.appspot.com/o/ecom%2Fecom%2Fdanh%20gia%20nhan%20xet.png?alt=media&token=3d6b94d2-7139-46d4-82d2-ed42a1d2dd21)
-![Đánh giá sao và nhận xét](https://res.cloudinary.com/dbekkzxtt/image/upload/v1677837968/Screenshot_from_2023-03-03_17-01-10_aynchs.png)
-#### Chức năng hỏi đáp
-![hỏi đáp](https://firebasestorage.googleapis.com/v0/b/test-8c816.appspot.com/o/ecom%2Fecom%2Fhoi%20dap.png?alt=media&token=226710a4-98e5-4e01-b259-c0648a8f2c8f)
-![Chức năng hỏi đáp](https://res.cloudinary.com/dbekkzxtt/image/upload/v1677837969/Screenshot_from_2023-03-03_17-02-13_hbglgf.png)
-#### Chức năng in báo giá PDF
-![in báo giá](https://res.cloudinary.com/dbekkzxtt/image/upload/v1677837967/Screenshot_from_2023-03-03_17-02-48_zezsng.png)
-#### Chức năng thanh toán
-![thanh toán](https://firebasestorage.googleapis.com/v0/b/test-8c816.appspot.com/o/ecom%2Fecom%2Fthanh%20toan.png?alt=media&token=b8b89829-a51d-4899-b1e3-463eb59bdd78)
-![thanh toán](https://firebasestorage.googleapis.com/v0/b/test-8c816.appspot.com/o/ecom%2Fecom%2Fthanh%20toan%201.png?alt=media&token=69998f93-8579-4943-af2d-64177ca88b72)
-#### Chức năng so sánh thông số giữa 2 sản phẩm
-![so sánh](https://firebasestorage.googleapis.com/v0/b/test-8c816.appspot.com/o/ecom%2Fecom%2Fso%20sanh.png?alt=media&token=6ad0555d-37a2-4bbd-9711-96b687ea029b)
 
+ChatBot
+
+![1779669100461](image/README/1779669100461.png)
+
+![1779668958407](image/README/1779668958407.png)       ![1779668969766](image/README/1779668969766.png)
+
+![1779668995478](image/README/1779668995478.png)  
+
+#### Trang chủ
+
+![Trang chủ](https://res.cloudinary.com/davolb88z/image/upload/v1779631898/TrangChu_h8fh5l.jpg)
+
+#### Trang đăng nhập
+
+![Trang đăng nhập](https://res.cloudinary.com/davolb88z/image/upload/v1779631642/TrangDangNhap_ihnlbd.jpg)
+
+#### Trang quên mật khẩu
+
+![Trang quên mật khẩu](https://res.cloudinary.com/davolb88z/image/upload/v1779632086/DoiMatKhau_cuhydj.jpg)
+
+#### Trang thông tin tài khoản
+
+![Trang thông tin tài khoản](https://res.cloudinary.com/davolb88z/image/upload/v1779632124/ThongTinTaiKhoan_aekgfc.jpg)
+
+#### Trang quản lý thông tin giao nhận hàng
+
+![Trang quản lý thông tin giao nhận hàng](https://res.cloudinary.com/davolb88z/image/upload/v1779632497/NhapDiaChi_fczzqt.jpg)
+
+#### Trang lọc sản phẩm nâng cao
+
+![Trang lọc sản phẩm nâng cao](https://res.cloudinary.com/davolb88z/image/upload/v1779632564/TimKiemNangCao_xm0ldp.jpg)
+
+#### Trang giỏ hàng
+
+![Trang giỏ hàng](https://res.cloudinary.com/davolb88z/image/upload/v1779632664/GioHang_dlt3ze.jpg)
+
+#### Chức năng đánh giá sao và nhận xét
+
+![Đánh giá sao và nhận xét](https://res.cloudinary.com/davolb88z/image/upload/v1779632697/DanhGia_sfdc78.jpg)
+
+#### Chức năng thanh toán
+
+
+![1779668673354](image/README/1779668673354.png)
+
+#### Chức năng so sánh thông số giữa 2 sản phẩm
+
+![so sánh](https://res.cloudinary.com/davolb88z/image/upload/v1779632853/SoSanh_rdlpf1.jpg)
+
+#### Chức năng tìm kiếm
+
+![so sánh](https://res.cloudinary.com/davolb88z/image/upload/v1779632893/TimKiem_r5krwi.jpg)
