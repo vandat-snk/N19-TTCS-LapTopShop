@@ -88,7 +88,13 @@ const addProduct = async (data) => {
     });
   } catch (error) {
     $("#action_button").attr("disabled", false);
-    return showAlert("error", error.responseJSON.message);
+    console.log("ADD PRODUCT ERROR:", error);
+    console.log("RESPONSE JSON:", error.responseJSON);
+
+    return showAlert(
+      "error",
+      error.responseJSON?.message || error.responseText || "Add product failed"
+    );
   }
 };
 const editProduct = async (data) => {
@@ -113,7 +119,13 @@ const editProduct = async (data) => {
     });
   } catch (error) {
     $("#action_button").attr("disabled", false);
-    return showAlert("error", error.responseJSON.message);
+    console.log("EDIT PRODUCT ERROR:", error);
+    console.log("RESPONSE JSON:", error.responseJSON);
+
+    return showAlert(
+      "error",
+      error.responseJSON?.message || error.responseText || "Edit product failed"
+    );
   }
 };
 $("#sample_form").on("submit", async (e) => {

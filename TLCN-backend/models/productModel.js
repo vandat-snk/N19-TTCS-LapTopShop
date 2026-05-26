@@ -21,9 +21,20 @@ const productSchema = new mongoose.Schema(
       type: Number,
       validate: {
         validator: function (val) {
-          return val <= this.price;
+          if (val == null || val === "") return true;
+
+          let price = this.price;
+
+          if (!price && typeof this.getUpdate === "function") {
+            const update = this.getUpdate();
+            price = update.price || update.$set?.price;
+          }
+
+          if (!price) return true;
+
+          return Number(val) <= Number(price);
         },
-        message: "Giá giảm: ({VALUE}) phải nhỏ hơn giá gốc",
+        message: "Giá sau giảm phải nhỏ hơn hoặc bằng giá gốc",
       },
     },
     description: String,
@@ -186,4 +197,4 @@ productSchema.post("findOneAndUpdate", async function (doc) {
 
 const Product = mongoose.model("Product", productSchema);
 
-module.exports = Product;
+module.exports = Product;

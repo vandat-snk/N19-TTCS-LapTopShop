@@ -37,11 +37,11 @@ exports.deleteOne = (Model) =>
   catchAsync(async (req, res, next) => {
     if (Model == Import) {
       const invoice = await Model.findById(req.params.id);
-      await invoice.invoice.forEach(async (value, index) => {
+      for (const value of invoice.invoice) {
         await Product.findByIdAndUpdate(value.product, {
           $inc: { inventory: -value.quantity },
         });
-      });
+      }
     }
     const doc = await Model.findByIdAndDelete(req.params.id);
 
@@ -93,7 +93,7 @@ exports.updateOne = (Model) =>
         .replace(/&lt;/g, "<")
         .replace(/&gt;/g, ">");
       if (req.body.promotion >= req.body.price)
-        return next(new AppError("Giá giảm phải nhỏ hơn giá gốc", 500));
+        return next(new AppError("Giá sau giảm phải nhỏ hơn giá gốc", 500));
       const doc = await Model.findByIdAndUpdate(req.params.id, req.body, {
         new: true,
         runValidators: false,
@@ -114,11 +114,11 @@ exports.updateOne = (Model) =>
     }
     if (Model == Import) {
       const invoice = await Model.findById(req.params.id);
-      await invoice.invoice.forEach(async (value, index) => {
+      for (const value of invoice.invoice) {
         await Product.findByIdAndUpdate(value.product, {
           $inc: { inventory: -value.quantity },
         });
-      });
+      }
       const product = req.body.invoice;
       for (const value of product) {
         await Product.findByIdAndUpdate(value.product, {

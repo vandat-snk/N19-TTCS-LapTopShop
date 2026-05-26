@@ -111,15 +111,22 @@ app.all("*", (req, res, next) => {
 });
 
 app.use((err, req, res, next) => {
-  // console.log(err.stack);
+  console.error("========== ERROR DETAIL ==========");
+  console.error(err);
+  console.error("message:", err?.message);
+  console.error("stack:", err?.stack);
+  console.error("==================================");
 
-  err.statusCode = err.statusCode || 500;
-  err.status = err.status || "error";
-  res.status(err.statusCode).json({
-    status: err.status,
-    error: err,
-    message: err.message,
-    stack: err.stack,
+  const statusCode =
+    Number.isInteger(err?.statusCode) && err.statusCode >= 100 && err.statusCode <= 599
+      ? err.statusCode
+      : 500;
+
+  res.status(statusCode).json({
+    status: err?.status || "error",
+    message: err?.message || String(err) || "Đã có lỗi xảy ra",
+    stack: err?.stack,
+    fullError: err,
   });
 });
 

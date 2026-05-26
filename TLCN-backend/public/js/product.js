@@ -144,24 +144,25 @@ $("#add_data").click(function () {
 
   $("#action_modal").modal("show");
 });
+
 $(document).on("click", ".edit", function () {
   files = [];
   $("#sample_form")[0].reset();
+
   const id = $(this).data("id");
 
   $("#dynamic_modal_title").text("Edit Product");
-
   $("#action").val("Edit");
-
+  $("#id").val(id);
   $("#action_button").text("Edit");
-
-  $("#action_modal").modal("show");
 
   $(".mb-2").show();
 
-  $(".img-all").hide();
+  $(".img-all").show();
 
   $(".img-show").empty();
+
+  $("#action_modal").modal("show");
 
   $.ajax({
     url: `/api/v1/products/${id}`,
@@ -170,7 +171,7 @@ $(document).on("click", ".edit", function () {
       const product = data.data.data;
       const specs = product.specs || {};
 
-      $("#id").val(id);
+      $("#id").val(product._id || id);
       $("#title").val(product.title);
 
       $("#category")
@@ -200,6 +201,25 @@ $(document).on("click", ".edit", function () {
       } else {
         $("#description").val(product.description || "");
       }
+
+      $(".img-show").empty();
+
+      if (product.images && product.images.length > 0) {
+        product.images.forEach((image) => {
+          $(".img-show").append(`
+            <div class="image">
+              <img src="${image}" 
+                   onerror="this.src='/images/unnamed.jpg'" />
+            </div>
+          `);
+        });
+      }
+    },
+    error: function (error) {
+      showAlert(
+        "error",
+        error.responseJSON?.message || "Không tải được thông tin sản phẩm"
+      );
     },
   });
 });
