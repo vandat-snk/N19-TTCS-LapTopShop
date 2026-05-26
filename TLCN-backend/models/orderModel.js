@@ -85,10 +85,12 @@ orderSchema.post("findOneAndUpdate", async function (doc) {
   if (doc.paymentInfo && doc.paymentInfo.method === "paypal" && doc.status === "Cancelled") {
     await Transaction.create({
       user: doc.user._id.toString(),
+      order: doc._id,
+      type: "refund",
       amount: doc.totalPrice,
-      payments: "refund_to_bank", // Đổi nhãn để quản lý biết cần chuyển khoản trả khách
-      order: doc.id,
-      status: "Pending", // Trạng thái chờ kế toán chuyển khoản
+      paymentMethod: "paypal",
+      transactionCode: `refund-${doc.id}`,
+      status: "pending",
     });
   }
 });

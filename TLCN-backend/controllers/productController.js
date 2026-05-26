@@ -17,7 +17,7 @@ exports.uploadProductImages = (req, res, next) => {
         );
       }
     } else if (err) {
-      return next(new AppError("Upload thất bại.", 400), false);
+      return next(new AppError(err.message || "Upload thất bại.", 400), false);
     }
     if (req.body.promotion == "") req.body.promotion = req.body.price;
     next();

@@ -17,6 +17,8 @@ const PaymentPage = () => {
   const [payPal, setPayPal] = useState();
   const navigate = useNavigate();
   const { cart } = useSelector((state) => state.cart);
+  const [checkoutItems, setCheckoutItems] = useState([]);
+  const [checkoutType, setCheckoutType] = useState("cart");
   const { address } = useSelector((state) => state.address);
   const dispatch = useDispatch();
   const data = address.filter((item) => item.setDefault === true)[0];
@@ -25,19 +27,36 @@ const PaymentPage = () => {
       top: 0,
       behavior: "smooth",
     });
+
     if (
       localStorage.getItem("jwt") &&
       JSON.parse(localStorage.getItem("user")).active === "verify"
     ) {
       return navigate("/verify");
     }
+
     if (
       localStorage.getItem("jwt") === null &&
       JSON.parse(localStorage.getItem("user")) === null
     ) {
       return navigate("/sign-in");
     }
-  }, []);
+
+    const params = new URLSearchParams(window.location.search);
+    const type = params.get("type");
+
+    if (type === "buy-now") {
+      const buyNowItem = JSON.parse(localStorage.getItem("buyNowItem"));
+
+      if (buyNowItem) {
+        setCheckoutType("buy-now");
+        setCheckoutItems([buyNowItem]);
+      }
+    } else {
+      setCheckoutType("cart");
+      setCheckoutItems(cart || []);
+    }
+  }, [cart, navigate]);
 
   const payWithCash = () => {
     setPaymentMethod("tiền mặt");
@@ -50,6 +69,12 @@ const PaymentPage = () => {
     setPayPal(true);
     setCash(false);
   };
+
+  const totalPrice = checkoutItems?.reduce(
+    (count, item) =>
+      count + item.quantity * (item.product.promotion || item.product.price),
+    0
+  );
 
   const handleClick = async () => {
     if (data === undefined) {
@@ -74,13 +99,8 @@ const PaymentPage = () => {
             phone: data?.phone,
             receiver: data?.name,
           },
-          cart: cart,
-          totalPrice: cart?.reduce(
-            (count, item) =>
-              count +
-              item.quantity * (item.product.promotion || item.product.price),
-            0
-          ),
+          cart: checkoutItems,
+          totalPrice: totalPrice,
           paymentInfo: {
             method: paymentMethod,
           },
@@ -89,10 +109,11 @@ const PaymentPage = () => {
           phone: data?.phone,
           receiver: data?.name,
           payments: paymentMethod,
+
+          checkoutType: checkoutType,
         };
         if (paymentMethod === "tiền mặt") {
           try {
-            dispatch(resetCart());
             const response = await orderApi.createOrder(dataAdress);
 
             const createdOrder =
@@ -102,22 +123,62 @@ const PaymentPage = () => {
               {};
 
             const data1 = {
-              id: createdOrder?._id || response?.data?.id,
-              total: createdOrder?.totalPrice || response?.data?.totalPrice,
-              cart: createdOrder?.cart || [],
+              id:
+                createdOrder?._id ||
+                createdOrder?.id ||
+                response?.data?.data?._id ||
+                response?.data?.id,
+
+              total:
+                createdOrder?.totalPrice ||
+                createdOrder?.total ||
+                response?.data?.totalPrice ||
+                dataAdress?.totalPrice,
+
+              totalPrice:
+                createdOrder?.totalPrice ||
+                createdOrder?.total ||
+                response?.data?.totalPrice ||
+                dataAdress?.totalPrice,
+
+              cart: createdOrder?.cart || dataAdress?.cart || [],
             };
 
             localStorage.setItem("order", JSON.stringify(data1));
+
+            if (checkoutType === "cart") {
+              dispatch(resetCart());
+            } else {
+              localStorage.removeItem("buyNowItem");
+            }
 
             setTimeout(() => {
               navigate("/payment-cash");
             }, 100);
           } catch (error) {
-            console.log(error.message);
+            toast.dismiss();
+            toast.error(error.message || "Khong the tao don hang");
           }
         } else {
-          localStorage.setItem("order", JSON.stringify(dataAdress));
-          navigate("/payment-bank");
+          try {
+            const quoteResponse = await orderApi.getCheckoutQuote(dataAdress);
+            const quote = quoteResponse?.data || quoteResponse;
+
+            localStorage.setItem(
+              "order",
+              JSON.stringify({
+                ...dataAdress,
+                totalPrice: quote?.totalPrice || dataAdress.totalPrice,
+                subtotal: quote?.subtotal,
+                discount: quote?.discount,
+                isFirstOrder: quote?.isFirstOrder,
+              })
+            );
+            navigate("/payment-bank");
+          } catch (error) {
+            toast.dismiss();
+            toast.error(error.message || "Khong the kiem tra don hang");
+          }
         }
       }
     });
@@ -125,7 +186,7 @@ const PaymentPage = () => {
 
   return (
     <>
-      {cart?.length > 0 ? (
+      {checkoutItems?.length > 0 ? (
         <>
           <div className="payment container">
             <div className="information-payment">
@@ -203,9 +264,12 @@ const PaymentPage = () => {
                     Chỉnh sửa
                   </span>
                 </div>
-                {cart?.length > 0 &&
-                  cart.map((item) => (
-                    <InformationOrder key={item.id} data={item} />
+                {checkoutItems?.length > 0 &&
+                  checkoutItems.map((item) => (
+                    <InformationOrder
+                      key={item.id || item.product?._id}
+                      data={item}
+                    />
                   ))}
               </div>
               <div className="flex flex-col bg-white rounded-lg pb-5 mt-10">
@@ -214,15 +278,7 @@ const PaymentPage = () => {
                     Tổng tạm tính
                   </span>
                   <span className="text-lg font-semibold">
-                    {formatPrice(
-                      cart?.reduce(
-                        (count, item) =>
-                          count +
-                          item.quantity *
-                            (item.product.promotion || item.product.price),
-                        0
-                      )
-                    )}
+                    {formatPrice(totalPrice)}
                   </span>
                 </div>
                 <div className="flex items-center justify-between px-5 pb-3">
@@ -236,15 +292,7 @@ const PaymentPage = () => {
                     Thành tiền
                   </span>
                   <span className="text-xl font-semibold text-red-600">
-                    {formatPrice(
-                      cart?.reduce(
-                        (count, item) =>
-                          count +
-                          item.quantity *
-                            (item.product.promotion || item.product.price),
-                        0
-                      )
-                    )}
+                    {formatPrice(totalPrice)}
                   </span>
                 </div>
                 <button

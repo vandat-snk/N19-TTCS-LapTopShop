@@ -8,6 +8,8 @@ import { useDispatch } from "react-redux";
 import { resetCart } from "../../redux/cart/cartSlice";
 import orderApi from "../../api/orderApi";
 
+const VND_PER_USD = 24000;
+
 const PaymentBank = () => {
   const dataOrder = JSON.parse(localStorage.getItem("order"));
   const navigate = useNavigate();
@@ -18,6 +20,10 @@ const PaymentBank = () => {
       top: 0,
       behavior: "smooth",
     });
+    if (!dataOrder || !dataOrder.cart || dataOrder.cart.length === 0) {
+      navigate("/cart");
+      return;
+    }
     if (
       localStorage.getItem("jwt") &&
       JSON.parse(localStorage.getItem("user")).active === "verify"
@@ -67,12 +73,31 @@ const PaymentBank = () => {
       <div className="mx-auto w-[800px] mt-10">
         <PayPalButtons
           style={{ shape: "pill" }}
-          createOrder={(data, actions) => {
+          createOrder={async (data, actions) => {
+            const quoteResponse = await orderApi.getCheckoutQuote(dataOrder);
+            const quote = quoteResponse?.data || quoteResponse;
+            const totalPrice = quote?.totalPrice || dataOrder?.totalPrice;
+            const usdValue = Math.max(totalPrice / VND_PER_USD, 0.01).toFixed(
+              2
+            );
+
+            localStorage.setItem(
+              "order",
+              JSON.stringify({
+                ...dataOrder,
+                totalPrice,
+                subtotal: quote?.subtotal,
+                discount: quote?.discount,
+                isFirstOrder: quote?.isFirstOrder,
+              })
+            );
+
             return actions.order.create({
               purchase_units: [
                 {
                   amount: {
-                    value: Number((dataOrder?.totalPrice / 24000).toFixed(2)),
+                    currency_code: "USD",
+                    value: usdValue,
                   },
                 },
               ],
@@ -80,13 +105,11 @@ const PaymentBank = () => {
           }}
           onApprove={async (data, actions) => {
             const order = await actions.order.capture();
-            console.log("order:", order);
             Swal.fire(
               "Thanh toán thành công!",
               "Cảm ơn bạn đã ủng hộ cửa hàng !!!",
               "success"
             );
-            console.log(dataOrder);
             const data1 = {
               shippingDetails: dataOrder?.shippingDetails || {
                 address: dataOrder?.address,
@@ -112,16 +135,21 @@ const PaymentBank = () => {
               payments: dataOrder?.payments || dataOrder?.paymentInfo?.method,
               invoicePayment: order,
             };
-            console.log(data1);
-
             try {
-              const response = await orderApi.createOrder(data1);
+              await orderApi.createOrder(data1);
+
+              if (dataOrder?.checkoutType === "cart") {
+                dispatch(resetCart());
+              } else {
+                localStorage.removeItem("buyNowItem");
+              }
+
+              localStorage.removeItem("order");
+              navigate("/account/orders");
             } catch (error) {
-              console.log(error.message);
+              toast.dismiss();
+              toast.error(error.message || "Khong the tao don hang PayPal");
             }
-            dispatch(resetCart());
-            localStorage.removeItem("order");
-            navigate("/");
           }}
           onError={(err) => {
             toast.dismiss();

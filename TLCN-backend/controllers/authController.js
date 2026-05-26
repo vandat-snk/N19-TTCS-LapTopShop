@@ -98,8 +98,8 @@ const sendVerifyToken = catchAsync(async (user, statusCode, res) => {
 
   res.cookie("jwt", token, cookieOptions);
   // 3) Send it to user's email
-  const verifyURL = `https://hctech.onrender.com/verify`;
-  const message = `Bạn là chủ tài khoản? Vui lòng xác nhận tài khoản tại:  ${verifyURL}.\nMã xác nhận: ${verifyToken}\n.Nếu không phải, vui lòng bỏ qua mail này!`;
+  const verifyURL = `${process.env.CLIENT_URL || "http://localhost:5173"}/verify`;
+  const message = `Chào bạn,\n\nMã xác nhận kích hoạt tài khoản Laptop Shop của bạn là: ${verifyToken}\n\nVui lòng nhập mã này vào trang đăng ký để hoàn tất quá trình xác thực. Mã có hiệu lực trong vòng 10 phút.\n\nNếu bạn không thực hiện yêu cầu này, vui lòng bỏ qua email.\n\nTrân trọng,\nĐội ngũ Laptop Shop.`;
   user.password = undefined;
   try {
     await sendEmail({

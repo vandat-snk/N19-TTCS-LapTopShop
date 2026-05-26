@@ -3,13 +3,19 @@ import { useNavigate } from "react-router-dom";
 import { formatPrice } from "../../utils/formatPrice";
 
 const PaymentCash = () => {
-  const data = JSON.parse(localStorage.getItem("order"));
+  const data = JSON.parse(localStorage.getItem("order")) || {};
   const navigate = useNavigate();
 
   const originalPrice =
-    data?.cart?.reduce((sum, item) => sum + item.quantity * item.price, 0) || 0;
+    data?.cart?.reduce(
+      (sum, item) =>
+        sum +
+        item.quantity *
+          (item.product?.promotion || item.product?.price || item.price || 0),
+      0
+    ) || 0;
 
-  const finalPrice = data?.total || 0;
+  const finalPrice = data?.total || data?.totalPrice || originalPrice || 0;
 
   const discountPrice = originalPrice - finalPrice;
   useEffect(() => {
@@ -54,7 +60,7 @@ const PaymentCash = () => {
         <div className="mt-10 p-5 flex flex-col w-[550px]">
           <div className="flex items-center text-xl justify-between ">
             <span>Mã đơn hàng:</span>
-            <span>{data?.id}</span>
+            <span>{data?.id || data?._id || "Không có mã đơn"}</span>
           </div>
 
           <div className="flex items-center text-xl justify-between">

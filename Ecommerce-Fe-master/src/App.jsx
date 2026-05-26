@@ -33,6 +33,8 @@ function App() {
       <PayPalScriptProvider
         options={{
           "client-id": key.ClientId,
+          currency: "USD",
+          intent: "capture",
         }}
       >
         <Header />

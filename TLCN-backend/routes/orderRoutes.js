@@ -25,6 +25,10 @@ router.route("/topProduct").post(orderController.topProduct);
 router.route("/statusInRange").post(orderController.countStatusInRange);
 router.route("/topProductInRange").post(orderController.topProductInRange);
 router.route("/sumInRange").post(orderController.sumInRange);
+router.route("/checkout-quote").post(
+  authController.restrictTo("user"),
+  orderController.getCheckoutQuote
+);
 router
   .route("/:id")
   .get(orderController.isOwner, orderController.getOrder)

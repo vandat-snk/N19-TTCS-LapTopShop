@@ -32,13 +32,15 @@ const SubInformationProduct = ({ data }) => {
   };
   const handleBuy = () => {
     if (!checkLogin()) return;
-    const action = addToCart({
+
+    const buyNowItem = {
       id: data._id,
       product: data,
       quantity: 1,
-    });
-    dispatch(action);
-    navigate("/cart");
+    };
+
+    localStorage.setItem("buyNowItem", JSON.stringify(buyNowItem));
+    navigate("/checkout?type=buy-now");
   };
   return (
     <div className="product-info flex flex-col p-6">

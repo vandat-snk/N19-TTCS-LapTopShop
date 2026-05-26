@@ -9,7 +9,10 @@ exports.returnPaypalStatus = catchAsync(async (req, res, next) => {
   const newRecord = {
     user: req.user,
     amount: req.body.amount,
-    payments: "paypal",
+    type: "payment",
+    paymentMethod: "paypal",
+    transactionCode: req.body.transactionCode,
+    status: "success",
     invoicePayment: req.body.invoicePayment,
   };
   await Transaction.create(newRecord);

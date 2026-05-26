@@ -62,7 +62,7 @@
     <div class="modal-content"
          style="border-radius:14px; overflow:hidden; background:#faf7ff;">
 
-      <form id="sample_form" enctype="multipart/form-data">
+      <form method="post" id="sample_form" enctype="multipart/form-data">
 
         <!-- HEADER -->
         <div class="modal-header"
@@ -100,7 +100,7 @@
 
             <div class="col-md-3">
               <label class="form-label">Nhu cầu</label>
-              <select name="demand" id="demand" class="form-control">
+              <select name="specs[demand]" id="demand" class="form-control">
                 <option value="Văn-phòng">Văn phòng</option>
                 <option value="Học-sinh-Sinh-viên">Học sinh - Sinh viên</option>
                 <option value="Gaming">Gaming</option>
@@ -110,7 +110,7 @@
 
             <div class="col-md-3">
               <label class="form-label">Màu sắc</label>
-              <select name="color" id="color" class="form-control">
+              <select name="specs[color]" id="color" class="form-control">
                 <option value="Đen">Đen</option>
                 <option value="Bạc">Bạc</option>
                 <option value="Vàng">Vàng</option>
@@ -136,7 +136,7 @@
 
             <div class="col-md-4">
               <label class="form-label">Cân nặng</label>
-              <input type="number" step="0.01" name="weight" id="weight" class="form-control" />
+              <input type="number" step="0.01" name="specs[weight]" id="weight" class="form-control" />
             </div>
 
           </div>
@@ -146,17 +146,17 @@
 
             <div class="col-md-4">
               <label class="form-label">RAM</label>
-              <input type="number" name="ram" id="ram" class="form-control" />
+              <input type="text" name="specs[ram]" id="ram" class="form-control" />
             </div>
 
             <div class="col-md-4">
               <label class="form-label">Pin</label>
-              <input type="text" name="battery" id="battery" class="form-control" />
+              <input type="text" name="specs[battery]" id="battery" class="form-control" />
             </div>
 
             <div class="col-md-4">
               <label class="form-label">CPU</label>
-              <input type="text" name="cpu" id="cpu" class="form-control" />
+              <input type="text" name="specs[cpu]" id="cpu" class="form-control" />
             </div>
 
           </div>
@@ -165,17 +165,17 @@
 
             <div class="col-md-4">
               <label class="form-label">OS</label>
-              <input type="text" name="os" id="os" class="form-control" />
+              <input type="text" name="specs[os]" id="os" class="form-control" />
             </div>
 
             <div class="col-md-4">
               <label class="form-label">Màn hình</label>
-              <input type="text" name="screen" id="screen" class="form-control" />
+              <input type="text" name="specs[screen]" id="screen" class="form-control" />
             </div>
 
             <div class="col-md-4">
               <label class="form-label">Card đồ họa</label>
-              <input type="text" name="graphicCard" id="graphicCard" class="form-control" />
+              <input type="text" name="specs[graphicCard]" id="graphicCard" class="form-control" />
             </div>
 
           </div>
@@ -186,7 +186,7 @@
             <textarea name="description" id="description" class="form-control" rows="6"></textarea>
           </div>
 
-          <!-- IMAGE UPLOAD (ẩn khi Edit, hiện khi Add) -->
+          <!-- IMAGE UPLOAD -->
           <div class="mb-2 img-all">
 
             <div class="drag-area" style="border:2px dashed #a78bfa; border-radius:12px; padding:20px; text-align:center;">
@@ -208,8 +208,8 @@
         <!-- FOOTER -->
         <div class="modal-footer">
 
-          <input type="hidden" id="id" />
-          <input type="hidden" id="action" value="Add" />
+          <input type="hidden" name="id" id="id" />
+          <input type="hidden" name="action" id="action" value="Add" />
 
           <button type="button"
                   class="btn btn-secondary"

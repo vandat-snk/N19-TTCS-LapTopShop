@@ -80,7 +80,7 @@
 
             <div class="d-flex justify-content-between">
               <span class="text-muted"><i class="fa-solid fa-credit-card"></i> Thanh toán:</span>
-              <strong><%= data.payments %></strong>
+              <strong><%= data.paymentInfo && data.paymentInfo.method ? data.paymentInfo.method : "" %></strong>
             </div>
 
             <% if (data.shippingDetails) { %>
