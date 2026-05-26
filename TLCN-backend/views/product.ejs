@@ -62,7 +62,7 @@
     <div class="modal-content"
          style="border-radius:14px; overflow:hidden; background:#faf7ff;">
 
-      <form method="post" id="sample_form" enctype="multipart/form-data">
+      <form id="sample_form" enctype="multipart/form-data">
 
         <!-- HEADER -->
         <div class="modal-header"
@@ -126,17 +126,17 @@
 
             <div class="col-md-4">
               <label class="form-label">Giá</label>
-              <input type="number" id="price" class="form-control" />
+              <input type="number" name="price" id="price" class="form-control" />
             </div>
 
             <div class="col-md-4">
               <label class="form-label">Giảm giá</label>
-              <input type="number" id="promotion" class="form-control" />
+              <input type="number" name="promotion" id="promotion" class="form-control" />
             </div>
 
             <div class="col-md-4">
               <label class="form-label">Cân nặng</label>
-              <input type="number" step="0.01" id="weight" class="form-control" />
+              <input type="number" step="0.01" name="weight" id="weight" class="form-control" />
             </div>
 
           </div>
@@ -146,17 +146,17 @@
 
             <div class="col-md-4">
               <label class="form-label">RAM</label>
-              <input type="number" id="ram" class="form-control" />
+              <input type="number" name="ram" id="ram" class="form-control" />
             </div>
 
             <div class="col-md-4">
               <label class="form-label">Pin</label>
-              <input type="text" id="battery" class="form-control" />
+              <input type="text" name="battery" id="battery" class="form-control" />
             </div>
 
             <div class="col-md-4">
               <label class="form-label">CPU</label>
-              <input type="text" id="cpu" class="form-control" />
+              <input type="text" name="cpu" id="cpu" class="form-control" />
             </div>
 
           </div>
@@ -165,17 +165,17 @@
 
             <div class="col-md-4">
               <label class="form-label">OS</label>
-              <input type="text" id="os" class="form-control" />
+              <input type="text" name="os" id="os" class="form-control" />
             </div>
 
             <div class="col-md-4">
               <label class="form-label">Màn hình</label>
-              <input type="text" id="screen" class="form-control" />
+              <input type="text" name="screen" id="screen" class="form-control" />
             </div>
 
             <div class="col-md-4">
               <label class="form-label">Card đồ họa</label>
-              <input type="text" id="graphicCard" class="form-control" />
+              <input type="text" name="graphicCard" id="graphicCard" class="form-control" />
             </div>
 
           </div>
@@ -183,10 +183,10 @@
           <!-- DESCRIPTION -->
           <div class="mb-2">
             <label class="form-label">Mô tả</label>
-            <textarea id="description" class="form-control" rows="6"></textarea>
+            <textarea name="description" id="description" class="form-control" rows="6"></textarea>
           </div>
 
-          <!-- IMAGE UPLOAD -->
+          <!-- IMAGE UPLOAD (ẩn khi Edit, hiện khi Add) -->
           <div class="mb-2 img-all">
 
             <div class="drag-area" style="border:2px dashed #a78bfa; border-radius:12px; padding:20px; text-align:center;">
