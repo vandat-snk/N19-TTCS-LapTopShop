@@ -40,21 +40,7 @@ importSchema.pre(/^find/, function (next) {
   next();
 });
 
-importSchema.post("save", async function (doc, next) {
-  try {
-    const updatePromises = doc.invoice.map((item) =>
-      Product.findByIdAndUpdate(item.product, {
-        $inc: { inventory: item.quantity },
-      })
-    );
-    
-    await Promise.all(updatePromises);
-    next();
-  } catch (err) {
-    console.error("Lỗi khi cập nhật số lượng tồn kho:", err);
-    next(err);
-  }
-});
+
 importSchema.index({ "$**": "text" });
 
 const Import = mongoose.model("Import", importSchema);

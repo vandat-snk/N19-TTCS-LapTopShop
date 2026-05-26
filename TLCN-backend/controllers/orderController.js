@@ -229,7 +229,8 @@ exports.updateOrder = catchAsync(async (req, res, next) => {
   if (req.body.status == "Cancelled") {
     const cart = req.order.cart;
     for (const value of cart) {
-      await Product.findByIdAndUpdate(value.product._id, {
+      const productId = value.product._id || value.product;
+      await Product.findByIdAndUpdate(productId, {
         $inc: { inventory: value.quantity },
       });
     }
