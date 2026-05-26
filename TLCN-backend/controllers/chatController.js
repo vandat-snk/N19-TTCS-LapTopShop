@@ -228,11 +228,20 @@ async function retrieveProducts(message, keywords) {
         
         if (textKws.length > 0) {
           const kwRegex = new RegExp(textKws.join("|"), "i");
-          sorted.sort((a, b) => {
-            const matchA = kwRegex.test(a.title) || kwRegex.test(a.brand?.name) ? 1 : 0;
-            const matchB = kwRegex.test(b.title) || kwRegex.test(b.brand?.name) ? 1 : 0;
-            return matchB - matchA;
+          
+          const exactMatches = sorted.filter(p => {
+            return kwRegex.test(p.title) || 
+                   (p.brand && kwRegex.test(p.brand.name)) || 
+                   (p.specs && kwRegex.test(p.specs.demand));
           });
+
+          if (exactMatches.length > 0) {
+            // Đẩy các sản phẩm khớp từ khóa lên đầu
+            sorted = [...exactMatches, ...sorted.filter(p => !exactMatches.includes(p))];
+          } else {
+            // QUAN TRỌNG: Nếu Vector Search trả về toàn bộ kết quả không chứa keyword nào -> Hủy để ép Fallback
+            sorted = [];
+          }
         }
         
         if (sorted.length > 0) return sorted.slice(0, 4);
@@ -251,10 +260,12 @@ async function retrieveProducts(message, keywords) {
     
     const fallback = await Product.find({ ...filter, $or: regexConditions })
       .populate("brand category").select(selectFields).limit(4).lean();
-    if (fallback.length > 0) return fallback;
+    
+    // Trả về kết quả (kể cả rỗng) để ép AI báo "Không tìm thấy", tuyệt đối không bốc đại máy khác gây ảo giác
+    return fallback;
   }
 
-  // Mặc định: Trả về sản phẩm rẻ nhất theo bộ lọc
+  // Mặc định (Không có từ khóa): Trả về sản phẩm ngẫu nhiên rẻ nhất
   return Product.find(filter).populate("brand category").select(selectFields).sort({ price: 1 }).limit(4).lean();
 }
 
