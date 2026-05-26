@@ -20,7 +20,7 @@ const schema = yup.object({
     .min(8, "Tối thiểu 8 ký tự")
     .max(30, "Vượt quá 30 ký tự cho phép")
     .matches(
-      /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/,
+      /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z\d\s])\S{8,}$/,
       {
         message: "Bắt buộc phải có chữ hoa, chữ thường, ký tự đặc biệt, số",
       }
@@ -31,7 +31,7 @@ const schema = yup.object({
     .min(8, "Tối thiểu 8 ký tự")
     .max(30, "Vượt quá 30 ký tự cho phép")
     .matches(
-      /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/,
+      /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z\d\s])\S{8,}$/,
       {
         message: "Bắt buộc phải có chữ hoa, chữ thường, ký tự đặc biệt, số",
       }

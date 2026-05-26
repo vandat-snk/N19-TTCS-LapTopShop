@@ -118,15 +118,26 @@ const editProduct = async (data) => {
 };
 $("#sample_form").on("submit", async (e) => {
   e.preventDefault();
+
   const dt = new DataTransfer();
   files.forEach((file) => {
     dt.items.add(file);
   });
+
   const newFileList = dt.files;
-  $("input:file")[0].files = newFileList;
+
+  $("#sample_form input[type='file']")[0].files = newFileList;
+
   tinyMCE.triggerSave();
-  let form_data = new FormData($("form")[0]);
+
+  const form_data = new FormData($("#sample_form")[0]);
+
+  for (const pair of form_data.entries()) {
+    console.log(pair[0], pair[1]);
+  }
+
   const action = $("#action").val();
+
   if (action === "Add") {
     addProduct(form_data);
   } else {

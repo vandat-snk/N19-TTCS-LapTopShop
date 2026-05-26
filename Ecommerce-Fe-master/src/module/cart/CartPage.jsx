@@ -47,7 +47,7 @@ const CartPage = () => {
     navigate("/sign-in");
   };
   const handleCheckout = () => {
-    navigate("/checkout");
+    navigate("/checkout?type=cart");
   };
   return (
     <div className="mt-10">

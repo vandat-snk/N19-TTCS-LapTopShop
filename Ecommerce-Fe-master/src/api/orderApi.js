@@ -1,6 +1,10 @@
 import axiosClient from "./axiosClient";
 
 const orderApi = {
+  getCheckoutQuote(data) {
+    const url = "/api/v1/orders/checkout-quote";
+    return axiosClient.post(url, data);
+  },
   createOrder(data) {
     const url = "/api/v1/orders";
     return axiosClient.post(url, data);
