@@ -39,6 +39,7 @@ function normalizeVietnameseSlang(text) {
     "vi vo búc": "vivobook",
     "vi vô book": "vivobook",
     "rốc strix": "rog strix",
+    "táo khuyết": "apple",
     rốc: "rog",
     róc: "rog",
     "sờ trích": "strix",
@@ -67,6 +68,10 @@ function normalizeVietnameseSlang(text) {
     đeo: "dell",
     túp: "tuf",
     táp: "tuf",
+    táo: "apple",
+    mác: "mac",
+    láp: "laptop",
+    lap: "laptop",
     củ: "triệu",
     lít: "trăm",
     tr: "triệu",
@@ -168,6 +173,7 @@ function extractKeywords(message) {
     "msi",
     "apple",
     "macbook",
+    "mac",
     "thinkpad",
     "razer",
     "samsung",
@@ -219,57 +225,126 @@ function extractKeywords(message) {
 async function retrieveProducts(message, keywords) {
   const filter = {};
   const textKws = [];
-  
+
   keywords.forEach((kw) => {
-    if (typeof kw === "object" && kw.type === "price") filter.price = { $lte: kw.value };
+    if (typeof kw === "object" && kw.type === "price")
+      filter.price = { $lte: kw.value };
     else if (typeof kw === "string") textKws.push(kw);
   });
 
   const selectFields =
     "title price promotion specs brand category inventory images ratingsAverage";
 
+  // Trích xuất chính xác Brand & Series để áp dụng bộ lọc cứng (Strict Filtering)
+  const queryLower = normalizeVietnameseSlang(message);
+  const knownBrands = [
+    "asus",
+    "dell",
+    "hp",
+    "lenovo",
+    "acer",
+    "msi",
+    "apple",
+    "macbook",
+    "mac",
+    "thinkpad",
+    "razer",
+    "samsung",
+    "lg",
+    "gigabyte",
+  ];
+  const matchedBrands = knownBrands.filter((b) => queryLower.includes(b));
+
+  const knownSeries = [
+    "aspire",
+    "nitro",
+    "legion",
+    "rog",
+    "strix",
+    "zenbook",
+    "latitude",
+    "xps",
+    "pavilion",
+    "victus",
+  ];
+  const matchedSeriesList = knownSeries.filter((s) => queryLower.includes(s));
+
+  // Helper: Kiểm tra sản phẩm có khớp khắt khe Brand/Series không
+  const isMatch = (p) => {
+    const b = p.brand?.name?.toLowerCase() || "",
+      t = p.title?.toLowerCase() || "";
+    return (
+      (matchedBrands.length === 0 ||
+        matchedBrands.some((x) => b.includes(x) || t.includes(x))) &&
+      (matchedSeriesList.length === 0 ||
+        matchedSeriesList.some((x) => t.includes(x)))
+    );
+  };
+
   try {
     // 1. Semantic Vector Search
-    const response = await fetch(`${process.env.OLLAMA_URL || "http://localhost:11434"}/api/embeddings`, {
-      method: "POST", headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ model: process.env.OLLAMA_EMBED_MODEL || "nomic-embed-text", prompt: normalizeVietnameseSlang(message) })
-    });
-    
+    const response = await fetch(
+      `${process.env.OLLAMA_URL || "http://localhost:11434"}/api/embeddings`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          model: process.env.OLLAMA_EMBED_MODEL || "nomic-embed-text",
+          prompt: queryLower,
+        }),
+      },
+    );
+
     if (response.ok) {
       const { embedding } = await response.json();
       const searchResults = await Product.aggregate([
-        { $vectorSearch: { index: "vector_index", path: "embedding", queryVector: embedding, numCandidates: 100, limit: 20 } },
-        { $project: { score: { $meta: "vectorSearchScore" } } }
+        {
+          $vectorSearch: {
+            index: "vector_index",
+            path: "embedding",
+            queryVector: embedding,
+            numCandidates: 100,
+            limit: 20,
+          },
+        },
+        { $project: { score: { $meta: "vectorSearchScore" } } },
       ]);
 
-      const candidateIds = searchResults.filter(p => p.score >= 0.6).map(p => p._id);
-      
+      const candidateIds = searchResults
+        .filter((p) => p.score >= 0.6)
+        .map((p) => p._id);
+
       if (candidateIds.length > 0) {
         // 2. Real-time Hydration
-        const hydratedProducts = await Product.find({ _id: { $in: candidateIds }, ...filter })
-          .populate("brand category").select(selectFields).lean();
+        const hydratedProducts = await Product.find({
+          _id: { $in: candidateIds },
+          ...filter,
+        })
+          .populate("brand category")
+          .select(selectFields)
+          .lean();
 
-        // 3. Xếp hạng: Ưu tiên đẩy các sản phẩm chứa từ khóa (Brand/Series) lên đầu để AI dễ so sánh
-        let sorted = candidateIds.map(id => hydratedProducts.find(p => p._id.toString() === id.toString())).filter(Boolean);
-        
-        if (textKws.length > 0) {
-          const kwRegex = new RegExp(textKws.join("|"), "i");
-          
-          const exactMatches = sorted.filter(p => {
-            return kwRegex.test(p.title) || 
-                   (p.brand && kwRegex.test(p.brand.name)) || 
-                   (p.specs && kwRegex.test(p.specs.demand));
-          });
+        // 3. Xếp hạng: Ưu tiên lọc khớp tất cả thương hiệu & dòng máy nếu được đề cập đích danh
+        let sorted = candidateIds
+          .map((id) =>
+            hydratedProducts.find((p) => p._id.toString() === id.toString()),
+          )
+          .filter(Boolean);
+
+        if (matchedBrands.length > 0 || matchedSeriesList.length > 0) {
+          const exactMatches = sorted.filter(isMatch);
 
           if (exactMatches.length > 0) {
-            // Đẩy các sản phẩm khớp từ khóa lên đầu
-            sorted = [...exactMatches, ...sorted.filter(p => !exactMatches.includes(p))];
+            sorted = [
+              ...exactMatches,
+              ...sorted.filter((p) => !exactMatches.includes(p)),
+            ];
           } else {
-            // QUAN TRỌNG: Nếu Vector Search trả về toàn bộ kết quả không chứa keyword nào -> Hủy để ép Fallback
+            // QUAN TRỌNG: Nếu Vector Search trượt hoàn toàn Brand/Series được yêu cầu -> Hủy để ép Fallback
             sorted = [];
           }
         }
-        
+
         if (sorted.length > 0) return sorted.slice(0, 4);
       }
     }
@@ -279,20 +354,33 @@ async function retrieveProducts(message, keywords) {
 
   // --- FALLBACK: Regex Search nếu Ollama lỗi hoặc không tìm thấy Vector ---
   if (textKws.length > 0) {
-    const regexConditions = textKws.flatMap(kw => [
+    const regexConditions = textKws.flatMap((kw) => [
       { title: { $regex: kw, $options: "i" } },
-      { "specs.demand": { $regex: kw, $options: "i" } }
+      { "specs.demand": { $regex: kw, $options: "i" } },
     ]);
-    
-    const fallback = await Product.find({ ...filter, $or: regexConditions })
-      .populate("brand category").select(selectFields).limit(4).lean();
-    
+
+    let fallback = await Product.find({ ...filter, $or: regexConditions })
+      .populate("brand category")
+      .select(selectFields)
+      .limit(10)
+      .lean();
+
+    // Áp dụng lại bộ lọc cứng Brand & Series cho Fallback để triệt tiêu hoàn toàn Ảo giác
+    if (matchedBrands.length > 0 || matchedSeriesList.length > 0) {
+      fallback = fallback.filter(isMatch);
+    }
+
     // Trả về kết quả (kể cả rỗng) để ép AI báo "Không tìm thấy", tuyệt đối không bốc đại máy khác gây ảo giác
-    return fallback;
+    return fallback.slice(0, 4);
   }
 
   // Mặc định (Không có từ khóa): Trả về sản phẩm ngẫu nhiên rẻ nhất
-  return Product.find(filter).populate("brand category").select(selectFields).sort({ price: 1 }).limit(4).lean();
+  return Product.find(filter)
+    .populate("brand category")
+    .select(selectFields)
+    .sort({ price: 1 })
+    .limit(4)
+    .lean();
 }
 
 async function retrieveOrders(userId) {
@@ -305,24 +393,29 @@ async function retrieveOrders(userId) {
 
 // === FORMAT CONTEXT: Adapted for specs object ===
 function formatProductContext(products) {
-  if (!products || products.length === 0) return "Không tìm thấy sản phẩm phù hợp";
+  if (!products || products.length === 0)
+    return "Không tìm thấy sản phẩm phù hợp";
 
   return products
     .map((p, i) => {
-      const priceStr = p.promotion 
-        ? `${p.promotion.toLocaleString("vi-VN")}đ` 
+      const priceStr = p.promotion
+        ? `${p.promotion.toLocaleString("vi-VN")}đ`
         : `${p.price?.toLocaleString("vi-VN")}đ`;
-        
+
       const s = p.specs || {};
       const descParts = [];
       if (s.cpu) descParts.push(s.cpu);
       if (s.ram) descParts.push(s.ram);
-      if (s.graphicCard && s.graphicCard.toLowerCase() !== 'onboard') descParts.push(s.graphicCard);
+      if (s.graphicCard && s.graphicCard.toLowerCase() !== "onboard")
+        descParts.push(s.graphicCard);
       if (s.screen) descParts.push(s.screen);
       if (s.storage) descParts.push(s.storage);
-      
-      const desc = descParts.length > 0 ? descParts.join(", ") : (p.category?.name || "Laptop");
-      
+
+      const desc =
+        descParts.length > 0
+          ? descParts.join(", ")
+          : p.category?.name || "Laptop";
+
       return `- Tên: ${p.title} | Giá: ${priceStr} | Mô tả: ${desc}`;
     })
     .join("\n");
@@ -385,25 +478,50 @@ exports.sendMessage = catchAsync(async (req, res, next) => {
   const lastAssistantMsg = await ChatMessage.findOne({
     conversation: conversation._id,
     role: "assistant",
-  }).sort({ createdAt: -1 }).lean();
+  })
+    .sort({ createdAt: -1 })
+    .lean();
 
   const isShortReply = normMessage.length <= 30 && keywords.length === 0;
-  const isContinuation = ["có", "ok", "dạ", "vâng", "chốt", "lấy", "đúng", "tuyệt", "oke", "rồi", "máy này", "con này", "thế còn", "còn"].some(w => normMessage.includes(w));
+  const isContinuation = [
+    "có",
+    "ok",
+    "dạ",
+    "vâng",
+    "chốt",
+    "lấy",
+    "đúng",
+    "tuyệt",
+    "oke",
+    "rồi",
+    "máy này",
+    "con này",
+    "thế còn",
+    "còn",
+  ].some((w) => normMessage.includes(w));
 
   if (intent === "order") {
     const orders = await retrieveOrders(userId);
     context = `\n\n[DỮ LIỆU CỬA HÀNG]\n${formatOrderContext(orders)}`;
   } else if (intent === "policy") {
-    context = "\n\n[DỮ LIỆU CỬA HÀNG]\nChính sách cửa hàng đã có trong phần hệ thống.";
-  } else if ((isShortReply || isContinuation) && lastAssistantMsg && lastAssistantMsg.productRefs && lastAssistantMsg.productRefs.length > 0) {
+    context =
+      "\n\n[DỮ LIỆU CỬA HÀNG]\nChính sách cửa hàng đã có trong phần hệ thống.";
+  } else if (
+    (isShortReply || isContinuation) &&
+    lastAssistantMsg &&
+    lastAssistantMsg.productRefs &&
+    lastAssistantMsg.productRefs.length > 0
+  ) {
     // RAG MEMORY: Nếu khách chỉ chat ngắn gọn tiếp nối, bốc lại chính xác con máy cũ nhồi vào não AI
-    const products = await Product.find({ _id: { $in: lastAssistantMsg.productRefs } })
+    const products = await Product.find({
+      _id: { $in: lastAssistantMsg.productRefs },
+    })
       .populate("brand category")
       .lean();
-    
+
     // Bảo toàn đúng thứ tự cũ
     const sortedProducts = lastAssistantMsg.productRefs
-      .map(id => products.find(p => p._id.toString() === id.toString()))
+      .map((id) => products.find((p) => p._id.toString() === id.toString()))
       .filter(Boolean);
 
     context = `\n\n[DỮ LIỆU CỬA HÀNG]\n${formatProductContext(sortedProducts)}`;
@@ -449,10 +567,10 @@ exports.sendMessage = catchAsync(async (req, res, next) => {
   try {
     const ollamaUrl = process.env.OLLAMA_URL || "http://localhost:11434";
     const chatModel = process.env.OLLAMA_CHAT_MODEL || "laptop-chatbot";
-    
+
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 40000); // 40 seconds timeout
-    
+
     const response = await fetch(`${ollamaUrl}/api/chat`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -461,7 +579,7 @@ exports.sendMessage = catchAsync(async (req, res, next) => {
         messages: messages,
         stream: true,
       }),
-      signal: controller.signal
+      signal: controller.signal,
     });
     clearTimeout(timeoutId);
 
@@ -493,7 +611,7 @@ exports.sendMessage = catchAsync(async (req, res, next) => {
           if (parsed.message && parsed.message.content) {
             fullAiResponse += parsed.message.content;
             res.write(
-              `data: ${JSON.stringify({ chunk: parsed.message.content })}\n\n`
+              `data: ${JSON.stringify({ chunk: parsed.message.content })}\n\n`,
             );
           }
         } catch (e) {
@@ -508,27 +626,51 @@ exports.sendMessage = catchAsync(async (req, res, next) => {
         if (parsed.message && parsed.message.content) {
           fullAiResponse += parsed.message.content;
           res.write(
-            `data: ${JSON.stringify({ chunk: parsed.message.content })}\n\n`
+            `data: ${JSON.stringify({ chunk: parsed.message.content })}\n\n`,
           );
         }
       } catch (e) {}
     }
 
     // Hủy bỏ các link Markdown ảo giác do AI tự bịa ra (Ví dụ: [Dell](https://...))
-    let cleanAiResponse = fullAiResponse.replace(/\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g, "$1");
+    let cleanAiResponse = fullAiResponse.replace(
+      /\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g,
+      "$1",
+    );
     // Đảm bảo tin nhắn lưu vào DB không được để trống
-    let savedResponse = cleanAiResponse.trim() || "Xin lỗi, hiện tại mình đang gặp lỗi xử lý. Bạn có thể hỏi lại được không?";
+    let savedResponse =
+      cleanAiResponse.trim() ||
+      "Xin lỗi, hiện tại mình đang gặp lỗi xử lý. Bạn có thể hỏi lại được không?";
 
     // Post-processing: Ép AI chèn thêm câu kêu gọi click vào sản phẩm nếu đang chốt sale
-    const botTriggerWords = ["lên đơn", "chốt", "thanh toán", "đặt hàng", "gửi đơn", "lấy mẫu", "gửi bạn link"];
-    const userTriggerWords = ["chốt", "lấy con", "mua con", "mua máy", "lấy máy", "lấy em", "đặt con", "đặt hàng", "đặt máy"];
-    
-    const shouldAppendInstruction = 
-      botTriggerWords.some(w => savedResponse.toLowerCase().includes(w)) || 
-      userTriggerWords.some(w => message.toLowerCase().includes(w));
-    
+    const botTriggerWords = [
+      "lên đơn",
+      "chốt",
+      "thanh toán",
+      "đặt hàng",
+      "gửi đơn",
+      "lấy mẫu",
+      "gửi bạn link",
+    ];
+    const userTriggerWords = [
+      "chốt",
+      "lấy con",
+      "mua con",
+      "mua máy",
+      "lấy máy",
+      "lấy em",
+      "đặt con",
+      "đặt hàng",
+      "đặt máy",
+    ];
+
+    const shouldAppendInstruction =
+      botTriggerWords.some((w) => savedResponse.toLowerCase().includes(w)) ||
+      userTriggerWords.some((w) => message.toLowerCase().includes(w));
+
     if (shouldAppendInstruction) {
-      const instruction = "\n\n👉 **Vui lòng nhấn vào sản phẩm đang hiển thị ở bên dưới để xem chi tiết và tiến hành đặt hàng nhé!**";
+      const instruction =
+        "\n\n👉 **Vui lòng nhấn vào sản phẩm đang hiển thị ở bên dưới để xem chi tiết và tiến hành đặt hàng nhé!**";
       res.write(`data: ${JSON.stringify({ chunk: instruction })}\n\n`);
       savedResponse += instruction;
     }
