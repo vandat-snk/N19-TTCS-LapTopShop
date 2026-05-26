@@ -396,8 +396,9 @@ exports.sumRevenue = catchAsync(async (req, res, next) => {
 });
 exports.topProduct = catchAsync(async (req, res, next) => {
   const option = {
-    product: "$cart.product.id",
+    product: "$cart.product",
   };
+
   if (req.body.year) option.year = { $year: "$createdAt" };
   if (req.body.month) option.month = { $month: "$createdAt" };
   if (req.body.week) option.week = { $week: "$createdAt" };
@@ -418,9 +419,40 @@ exports.topProduct = catchAsync(async (req, res, next) => {
         image: { $first: "$cart.image" },
       },
     },
+    {
+      $lookup: {
+        from: "products",
+        localField: "_id.product",
+        foreignField: "_id",
+        as: "productInfo",
+      },
+    },
+    {
+      $addFields: {
+        productDoc: { $arrayElemAt: ["$productInfo", 0] },
+      },
+    },
+    {
+      $addFields: {
+        title: { $ifNull: ["$productDoc.title", "$title"] },
+        image: {
+          $ifNull: [
+            { $arrayElemAt: ["$productDoc.images", 0] },
+            "$image",
+          ],
+        },
+      },
+    },
+    {
+      $project: {
+        productInfo: 0,
+        productDoc: 0,
+      },
+    },
     { $sort: { quantity: -1 } },
     { $limit: 5 },
   ]);
+
   res.status(200).json(data);
 });
 
@@ -453,17 +485,21 @@ exports.countStatusInRange = catchAsync(async (req, res, next) => {
   ]);
   res.status(200).json(data);
 });
+
 exports.topProductInRange = catchAsync(async (req, res, next) => {
   const option = {
-    product: "$cart.product.id",
+    product: "$cart.product",
   };
+
   const dateFrom = req.body.dateFrom;
   const dateTo = req.body.dateTo;
+
   let dateStart = new Date(dateFrom);
-  dateStart;
   let dateEnd = new Date(dateTo);
+
   dateStart.setUTCHours(0, 0, 0, 0);
   dateEnd.setUTCHours(23, 59, 59, 999);
+
   const data = await Order.aggregate([
     {
       $unwind: "$cart",
@@ -485,11 +521,43 @@ exports.topProductInRange = catchAsync(async (req, res, next) => {
         image: { $first: "$cart.image" },
       },
     },
+    {
+      $lookup: {
+        from: "products",
+        localField: "_id.product",
+        foreignField: "_id",
+        as: "productInfo",
+      },
+    },
+    {
+      $addFields: {
+        productDoc: { $arrayElemAt: ["$productInfo", 0] },
+      },
+    },
+    {
+      $addFields: {
+        title: { $ifNull: ["$productDoc.title", "$title"] },
+        image: {
+          $ifNull: [
+            { $arrayElemAt: ["$productDoc.images", 0] },
+            "$image",
+          ],
+        },
+      },
+    },
+    {
+      $project: {
+        productInfo: 0,
+        productDoc: 0,
+      },
+    },
     { $sort: { quantity: -1 } },
     { $limit: 5 },
   ]);
+
   res.status(200).json(data);
 });
+
 exports.sumInRange = catchAsync(async (req, res, next) => {
   const dateFrom = req.body.dateFrom;
   const dateTo = req.body.dateTo;

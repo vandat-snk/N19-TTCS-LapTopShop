@@ -93,7 +93,7 @@ exports.updateOne = (Model) =>
         .replace(/&lt;/g, "<")
         .replace(/&gt;/g, ">");
       if (req.body.promotion >= req.body.price)
-        return next(new AppError("Giá giảm phải nhỏ hơn giá gốc", 500));
+        return next(new AppError("Giá sau giảm phải nhỏ hơn giá gốc", 500));
       const doc = await Model.findByIdAndUpdate(req.params.id, req.body, {
         new: true,
         runValidators: false,

@@ -75,33 +75,49 @@ function reloadData() {
 $("#add_data").click(function () {
   $("#dynamic_modal_title").text("Add User");
   $("#sample_form")[0].reset();
+
   $("#action").val("Add");
   $("#id").val("");
 
   $("#action_button").text("Add");
   $("#action_modal").modal("show");
+
   $(".mb-2").show();
 });
+
 $(document).on("click", ".edit", function () {
   const id = $(this).data("id");
 
   $("#dynamic_modal_title").text("Edit User");
+  $("#sample_form")[0].reset();
 
   $("#action").val("Edit");
-
+  $("#id").val(id);
   $("#action_button").text("Edit");
 
   $("#action_modal").modal("show");
-  $(".mb-2").hide();
-  $(".img-show").empty();
-  $(".edit-show").show();
+
+  $(".mb-2").show();
+
+  $("#email").closest(".mb-2").hide();
+  $("#password").closest(".mb-2").hide();
+  $("#passwordConfirm").closest(".mb-2").hide();
+
   $.ajax({
     url: `/api/v1/users/${id}`,
     method: "GET",
     success: function (data) {
       const user = data.data.data;
+
       $("#name").val(user.name);
+      $("#email").val(user.email);
       $("#id").val(user._id);
+    },
+    error: function (error) {
+      showAlert(
+        "error",
+        error.responseJSON?.message || "Không tải được thông tin người dùng"
+      );
     },
   });
 });

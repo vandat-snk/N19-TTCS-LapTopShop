@@ -11,13 +11,10 @@ exports.uploadProductImages = (req, res, next) => {
   uploadFiles(req, res, (err) => {
     if (err instanceof multer.MulterError) {
       if (err.code === "LIMIT_UNEXPECTED_FILE") {
-        return next(
-          new AppError("Vượt quá số lượng file quy định.", 400),
-          false
-        );
+        return next(new AppError("Vượt quá số lượng file quy định.", 400));
       }
     } else if (err) {
-      return next(new AppError(err.message || "Upload thất bại.", 400), false);
+      return next(new AppError(err.message || "Upload thất bại.", 400));
     }
     if (req.body.promotion == "") req.body.promotion = req.body.price;
     next();

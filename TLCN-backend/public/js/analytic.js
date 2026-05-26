@@ -31,10 +31,19 @@ const arr_status = [
     quantity: 0,
   },
 ];
+
+const FALLBACK_IMAGE =
+  "https://res.cloudinary.com/dbekkzxtt/image/upload/v1668578244/dwxqdvfwehpklx9fzx6l.webp";
+
+const getProductImage = (image) => {
+  if (Array.isArray(image)) return image[0] || FALLBACK_IMAGE;
+  return image || FALLBACK_IMAGE;
+};
+
 function showChart() {
   $("#myPieChart").remove();
   $("#noData-chart").remove();
-  $("#showChartPie").append('<canvas id="myPieChart"><canvas>');
+  $("#showChartPie").append('<canvas id="myPieChart"></canvas>');
   let ctx = document.getElementById("myPieChart");
   if (
     arr_status[0].quantity == 0 &&
@@ -139,7 +148,7 @@ $(document).ready(async function () {
   });
   $(".navbar-nav li").removeClass("active");
   $(".navbar-nav li")[0].className = "nav-item active";
-  loadPieChart();
+  await loadPieChart();
   const countUser = await $.ajax({
     url: "api/v1/users",
     method: "GET",
@@ -156,10 +165,7 @@ $(document).ready(async function () {
     url: "api/v1/orders/topProduct",
     method: "POST",
   });
-  const topInventory = await $.ajax({
-    url: "api/v1/products?sort=-inventory&limit=5",
-    method: "GET",
-  });
+
   if (topProduct.length == 0) {
     $("#sell-product").append(
       `<h2 class = "text-center">Chưa có sản phẩm nào </h2>`
@@ -171,8 +177,9 @@ $(document).ready(async function () {
     ${index + 1}
 </div>
 <div class="col-md-2">
-    <img src="${value.image[0]}" onerror="this.src='https://res.cloudinary.com/dbekkzxtt/image/upload/v1668578244/dwxqdvfwehpklx9fzx6l.webp'"
-        class="img-fluid" alt="Phone">
+    <img src="${getProductImage(value.image)}"
+      onerror="this.src='https://res.cloudinary.com/dbekkzxtt/image/upload/v1668578244/dwxqdvfwehpklx9fzx6l.webp'"
+      class="img-fluid" alt="Phone">
 </div>
 <div class="col-md-7 d-flex text-center align-items-center">
 ${value.title}
@@ -181,41 +188,7 @@ ${value.title}
 ${value.quantity} sản phẩm
 </div>`);
     });
-    $("#inventory-product").empty();
-    topInventory.data.data.forEach((value, index) => {
-      $("#inventory-product")
-        .append(`<div class="col-md-1 d-flex text-center align-items-center justify-content-center">
-    ${index + 1}
-</div>
-<div class="col-md-2">
-    <img src="${value.images[0]}"
-        class="img-fluid" alt="Phone">
-</div>
-<div class="col-md-7 d-flex text-center align-items-center">
-${value.title}
-</div>
-<div class="col-md-2 d-flex text-center align-items-center justify-content-center">
-${value.inventory} sản phẩm
-</div>`);
-    });
   }
-  $("#inventory-product").empty();
-  topInventory.data.data.forEach((value, index) => {
-    $("#inventory-product")
-      .append(`<div class="col-md-1 d-flex text-center align-items-center justify-content-center">
-    ${index + 1}
-</div>
-<div class="col-md-2">
-    <img src="${value.images[0]}"
-        class="img-fluid" alt="Phone">
-</div>
-<div class="col-md-7 d-flex text-center align-items-center">
-${value.title}
-</div>
-<div class="col-md-2 d-flex text-center align-items-center justify-content-center">
-${value.inventory} sản phẩm
-</div>`);
-  });
   const a = totalRevenue[0] ? totalRevenue[0].total_revenue : 0;
   const b = totalImport[0] ? totalImport[0].total : 0;
   document.getElementById("totalRevenue").innerHTML =
@@ -242,7 +215,7 @@ async function changeData(e) {
   let dateTo;
   let data;
   if (e.id == "allYear") {
-    loadPieChart();
+    await loadPieChart();
     const countUser = await $.ajax({
       url: "api/v1/users",
       method: "GET",
@@ -259,10 +232,7 @@ async function changeData(e) {
       url: "api/v1/orders/topProduct",
       method: "POST",
     });
-    const topInventory = await $.ajax({
-      url: "api/v1/products?sort=-inventory&limit=5",
-      method: "GET",
-    });
+
     $("#sell-product").empty();
     if (topProduct.length == 0) {
       $("#sell-product").append(
@@ -275,31 +245,15 @@ async function changeData(e) {
       ${index + 1}
   </div>
   <div class="col-md-2">
-      <img src="${value.image[0]}"
-          class="img-fluid" alt="Phone">
+      <img src="${getProductImage(value.image)}"
+        onerror="this.src='https://res.cloudinary.com/dbekkzxtt/image/upload/v1668578244/dwxqdvfwehpklx9fzx6l.webp'"
+        class="img-fluid" alt="Phone">
   </div>
   <div class="col-md-7 d-flex text-center align-items-center">
   ${value.title}
   </div>
   <div class="col-md-2 d-flex text-center align-items-center justify-content-center">
   ${value.quantity} sản phẩm
-  </div>`);
-      });
-      $("#inventory-product").empty();
-      topInventory.data.data.forEach((value, index) => {
-        $("#inventory-product")
-          .append(`<div class="col-md-1 d-flex text-center align-items-center justify-content-center">
-      ${index + 1}
-  </div>
-  <div class="col-md-2">
-      <img src="${value.images[0]}"
-          class="img-fluid" alt="Phone">
-  </div>
-  <div class="col-md-7 d-flex text-center align-items-center">
-  ${value.title}
-  </div>
-  <div class="col-md-2 d-flex text-center align-items-center justify-content-center">
-  ${value.inventory} sản phẩm
   </div>`);
       });
     }
@@ -355,7 +309,7 @@ async function changeData(e) {
     }
     data = { dateFrom, dateTo };
 
-    loadPieChart(data);
+    await loadPieChart(data);
     const totalRevenue = await $.ajax({
       url: "api/v1/orders/sumInRange",
       method: "POST",
@@ -396,8 +350,9 @@ async function changeData(e) {
       ${index + 1}
   </div>
   <div class="col-md-2">
-      <img src="${value.image[0]}"
-          class="img-fluid" alt="Phone">
+      <img src="${getProductImage(value.image)}"
+        onerror="this.src='https://res.cloudinary.com/dbekkzxtt/image/upload/v1668578244/dwxqdvfwehpklx9fzx6l.webp'"
+        class="img-fluid" alt="Phone">
   </div>
   <div class="col-md-7 d-flex text-center align-items-center">
   ${value.title}
