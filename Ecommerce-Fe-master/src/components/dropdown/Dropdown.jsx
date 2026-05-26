@@ -3,6 +3,7 @@ import { NavLink, useNavigate } from "react-router-dom";
 import styled from "styled-components";
 import Swal from "sweetalert2";
 import { logout } from "../../redux/auth/userSlice";
+import { resetCart } from "../../redux/cart/cartSlice";
 import { useDispatch } from "react-redux";
 import userApi from "../../api/userApi";
 const DropdownStyles = styled.div`
@@ -64,8 +65,8 @@ const Dropdown = () => {
       cancelButtonText: "Không",
     }).then(async (result) => {
       if (result.isConfirmed) {
-        const action = logout();
-        dispatch(action);
+        dispatch(logout());
+        dispatch(resetCart());
         await userApi.logout();
         navigate("/");
         Swal.fire("Tạm biệt! Hẹn gặp lại quý khách");

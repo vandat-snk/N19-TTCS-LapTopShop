@@ -7,7 +7,7 @@ const router = express.Router();
 router.use(authController.protect);
 router
   .route("/getTableOrder")
-  .get(authController.restrictTo("admin"), orderController.getTableOrder);
+  .get(authController.restrictTo("admin", "employee"), orderController.getTableOrder);
 
 router
   .route("/")

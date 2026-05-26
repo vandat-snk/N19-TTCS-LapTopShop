@@ -28,7 +28,10 @@
         data-bs-toggle="dropdown"
         aria-expanded="false"
       >
-        <span class="mr-2 d-none d-lg-inline text-gray-600 small">Admin</span>
+        <span class="mr-2 d-none d-lg-inline text-gray-600 small font-weight-bold">
+          <%= user.name %> (<span style="text-transform: capitalize;"><%= user.role %></span>)
+        </span>
+        
         <img class="img-profile rounded-circle" src="<%= user.avatar%>" />
       </button>
       <!-- Dropdown - User Information -->

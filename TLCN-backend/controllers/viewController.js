@@ -29,23 +29,31 @@ exports.errorPage = (req, res, next) => {
   if (res.locals.user == undefined) {
     return res.redirect("/login");
   }
-  if (res.locals.user.role != "admin") {
+  
+  if (res.locals.user.role !== "admin" && res.locals.user.role !== "employee") {
     return res.redirect("/error");
+  }
+  
+  next();
+};
+
+exports.alreadyLoggedIn = (req, res, next) => {
+  if (
+    res.locals.user != undefined && 
+    (res.locals.user.role === "admin" || res.locals.user.role === "employee")
+  ) {
+    return res.redirect("/");
   }
   next();
 };
-exports.alreadyLoggedIn = (req, res, next) => {
-  if (res.locals.user != undefined && res.locals.user.role == "admin")
-    return res.redirect("/");
-  next();
-};
+
 exports.googleLogin = catchAsync(async (req, res) => {
   const { email_verified, name, email, picture } = req.user;
   if (email_verified) {
     // 1) Check if user exists
     const user = await User.findOne({ email });
     // 2) Check if user exist
-    if (user.role == "admin") {
+    if (user.role === "admin" || user.role === "employee") {
       googleRedirect(user, res);
     }
     // 3) If user does not exist, create one

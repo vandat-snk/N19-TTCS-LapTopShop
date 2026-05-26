@@ -5,9 +5,10 @@ import Profile from "../profile/Profile";
 import Swal from "sweetalert2";
 import userApi from "../../api/userApi";
 import { logout } from "../../redux/auth/userSlice";
+import { resetCart } from "../../redux/cart/cartSlice";
 import Cart from "../cart/Cart";
 import { disableBodyScroll, enableBodyScroll } from "body-scroll-lock";
-import { getCart } from "../../redux/cart/cartSlice";
+import { getCart, loadCartByUser } from "../../redux/cart/cartSlice";
 import CartHollow from "../cart/CartHollow";
 import Search from "../search/Search";
 import useClickOutSide from "../../hooks/useClickOutSide";
@@ -47,8 +48,8 @@ const Navbar = () => {
       cancelButtonText: "Không",
     }).then(async (result) => {
       if (result.isConfirmed) {
-        const action = logout();
-        dispatch(action);
+        dispatch(logout());
+        dispatch(resetCart());
         await userApi.logout();
         navigate("/");
         Swal.fire("Tạm biệt! Hẹn gặp lại quý khách");
@@ -59,10 +60,13 @@ const Navbar = () => {
   // cart
   let { cart } = useSelector((state) => state.cart);
   useEffect(() => {
-    if (!cart) {
-      dispatch(getCart());
+    if (loggedInUser) {
+      const userId = loggedInUser._id || loggedInUser.id;
+      dispatch(loadCartByUser(userId));
+    } else {
+      dispatch(resetCart());
     }
-  }, [cart]);
+  }, [loggedInUser, dispatch]);
 
   //search
   const [keyword, setKeyWord] = useState("");

@@ -1,160 +1,251 @@
 <% layout('base') -%>
 
-    <div class="container">
-        <h1 class="my-4 text-center text-primary">Manage Product</h1>
+<div class="container-fluid py-4">
 
-        <div class="card">
-            <div class="card-header">
-                <div class="row">
-                    <div class="col col-sm-9 text-dark">
-                        <h4><strong>Product</strong></h4>
-                    </div>
-                    <div class="col col-sm-3">
-                        <button type="button" id="add_data" class="btn btn-success btn-sm float-end">Add</button>
-                    </div>
-                </div>
-            </div>
-            <div class="card-body">
-                <div class="table-responsive">
-                    <table class="table table-bordered table-hover" id="sample_data">
-                        <thead>
-                            <tr>
-                                <th>Image</th>
-                                <th>Name</th>
-                                <th>Price</th>
-                                <th>Inventory</th>
-                                <th>Action</th>
-                            </tr>
-                        </thead>
-                        <tbody>
+  <!-- HEADER -->
+  <div class="d-flex justify-content-between align-items-center mb-4">
 
-                        </tbody>
-                    </table>
-                </div>
+    <h3 class="fw-bold d-flex align-items-center gap-2" style="color:#7b4dbb;"><i class="fa-solid fa-box-archive"></i>
+      Quản lý sản phẩm
+    </h3>
+
+    <button type="button"
+            id="add_data"
+            class="btn btn-sm"
+            style="background:#a78bfa; color:white; border-radius:10px;"><i class="fa-solid fa-plus"></i> Thêm sản phẩm
+    </button>
+
+  </div>
+
+  <!-- CARD -->
+  <div class="card shadow-sm border-0"
+       style="border-radius:14px; overflow:hidden; background:#faf7ff;">
+
+    <div class="card-header border-0 py-3"
+         style="background:#f3edff;">
+
+      <h5 class="mb-0 fw-semibold d-flex align-items-center gap-2" style="color:#6d28d9;"><i class="fa-solid fa-list"></i>
+        Danh sách sản phẩm
+      </h5>
+
+    </div>
+
+    <div class="card-body">
+
+      <div class="table-responsive">
+
+        <table class="table table-hover align-middle" id="sample_data">
+
+          <thead style="background:#ede9fe;">
+            <tr style="color:#5b21b6;">
+              <th>Hình ảnh</th>
+              <th>Tên</th>
+              <th>Giá</th>
+              <th>Tồn kho</th>
+              <th>Thao tác</th>
+            </tr>
+          </thead>
+
+          <tbody></tbody>
+
+        </table>
+
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- MODAL -->
+<div class="modal fade" id="action_modal">
+  <div class="modal-dialog modal-xl">
+    <div class="modal-content"
+         style="border-radius:14px; overflow:hidden; background:#faf7ff;">
+
+      <form method="post" id="sample_form" enctype="multipart/form-data">
+
+        <!-- HEADER -->
+        <div class="modal-header"
+             style="background:#ede9fe;">
+
+          <h5 class="modal-title fw-bold" id="dynamic_modal_title"
+              style="color:#6d28d9;">
+            Sản phẩm
+          </h5>
+
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+
+        <!-- BODY -->
+        <div class="modal-body">
+
+          <!-- TITLE -->
+          <div class="mb-2">
+            <label class="form-label">Tên sản phẩm</label>
+            <input type="text" name="title" id="title" class="form-control" />
+          </div>
+
+          <!-- CATEGORY / BRAND / DEMAND / COLOR -->
+          <div class="row mb-2">
+
+            <div class="col-md-3">
+              <label class="form-label">Danh mục</label>
+              <select name="category" id="category" class="form-control"></select>
             </div>
+
+            <div class="col-md-3">
+              <label class="form-label">Thương hiệu</label>
+              <select name="brand" id="brand" class="form-control"></select>
+            </div>
+
+            <div class="col-md-3">
+              <label class="form-label">Nhu cầu</label>
+              <select name="demand" id="demand" class="form-control">
+                <option value="Văn-phòng">Văn phòng</option>
+                <option value="Học-sinh-Sinh-viên">Học sinh - Sinh viên</option>
+                <option value="Gaming">Gaming</option>
+                <option value="Đồ-họa-Kỹ-thuật">Đồ họa - Kỹ thuật</option>
+              </select>
+            </div>
+
+            <div class="col-md-3">
+              <label class="form-label">Màu sắc</label>
+              <select name="color" id="color" class="form-control">
+                <option value="Đen">Đen</option>
+                <option value="Bạc">Bạc</option>
+                <option value="Vàng">Vàng</option>
+                <option value="Trắng">Trắng</option>
+                <option value="Xám">Xám</option>
+              </select>
+            </div>
+
+          </div>
+
+          <!-- PRICE -->
+          <div class="row mb-2">
+
+            <div class="col-md-4">
+              <label class="form-label">Giá</label>
+              <input type="number" id="price" class="form-control" />
+            </div>
+
+            <div class="col-md-4">
+              <label class="form-label">Giảm giá</label>
+              <input type="number" id="promotion" class="form-control" />
+            </div>
+
+            <div class="col-md-4">
+              <label class="form-label">Cân nặng</label>
+              <input type="number" step="0.01" id="weight" class="form-control" />
+            </div>
+
+          </div>
+
+          <!-- SPECS -->
+          <div class="row mb-2">
+
+            <div class="col-md-4">
+              <label class="form-label">RAM</label>
+              <input type="number" id="ram" class="form-control" />
+            </div>
+
+            <div class="col-md-4">
+              <label class="form-label">Pin</label>
+              <input type="text" id="battery" class="form-control" />
+            </div>
+
+            <div class="col-md-4">
+              <label class="form-label">CPU</label>
+              <input type="text" id="cpu" class="form-control" />
+            </div>
+
+          </div>
+
+          <div class="row mb-2">
+
+            <div class="col-md-4">
+              <label class="form-label">OS</label>
+              <input type="text" id="os" class="form-control" />
+            </div>
+
+            <div class="col-md-4">
+              <label class="form-label">Màn hình</label>
+              <input type="text" id="screen" class="form-control" />
+            </div>
+
+            <div class="col-md-4">
+              <label class="form-label">Card đồ họa</label>
+              <input type="text" id="graphicCard" class="form-control" />
+            </div>
+
+          </div>
+
+          <!-- DESCRIPTION -->
+          <div class="mb-2">
+            <label class="form-label">Mô tả</label>
+            <textarea id="description" class="form-control" rows="6"></textarea>
+          </div>
+
+          <!-- IMAGE UPLOAD -->
+          <div class="mb-2 img-all">
+
+            <div class="drag-area" style="border:2px dashed #a78bfa; border-radius:12px; padding:20px; text-align:center;">
+
+              <span class="visible">
+                Kéo & thả ảnh hoặc <span class="select" role="button" style="color:#7b4dbb;">chọn file</span>
+              </span>
+
+              <input name="images" type="file" class="images" multiple />
+
+            </div>
+
+            <div class="img-show mt-3"></div>
+
+          </div>
 
         </div>
-    </div>
-    <div class="modal" id="action_modal">
-        <div class="modal-dialog modal-xl">
-            <div class="modal-content">
-                <form method="post" id="sample_form" enctype="multipart/form-data">
-                    <div class="modal-header" id="dynamic_modal_title">
-                        <h5 class="modal-title"></h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                    </div>
-                    <div class="modal-body">
-                        <div class="mb-2 edit-show">
-                            <label class="form-label">Title</label>
-                            <input type="text" name="title" id="title" class="form-control" />
-                        </div>
-                        <div class="form-row mb-2">
-                            <div class="form-group col-md-3">
-                                <label class="form-label">Category</label>
-                                <select name="category" class="form-control" id="category">
-                                </select>
-                            </div>
-                            <div class="form-group col-md-3">
-                                <label class="form-label">Brand</label>
-                                <select name="brand" class="form-control" id="brand">
-                                </select>
-                            </div>
-                            <div class="form-group col-md-3">
-                                <label class="form-label">Demand</label>
-                                <select name="demand" class="form-control" id="demand">
-                                    <option value="Văn-phòng">Văn phòng</option>
-                                    <option value="Học-sinh-Sinh-viên">Học sinh - Sinh viên</option>
-                                    <option value="Gaming">Gaming</option>
-                                    <option value="Đồ-họa-Kỹ-thuật">Đồ họa - Kỹ thuật</option>
-                                </select>
-                            </div>
-                            <div class="form-group col-md-3">
-                                <label class="form-label">Color</label>
-                                <select name="color" class="form-control" id="color">
-                                    <option value="Đen">Đen</option>
-                                    <option value="Bạc">Bạc</option>
-                                    <option value="Vàng">Vàng</option>
-                                    <option value="Trắng">Trắng</option>
-                                    <option value="Xám">Xám</option>
-                                </select>
-                            </div>
-                        </div>
-                        <div class="form-row mb-2 edit-show">
-                            <div class="form-group col-md-4">
-                                <label class="form-label">Price</label>
-                                <input type="number" name="price" id="price" class="form-control" />
-                            </div>
-                            <div class="form-group col-md-4">
-                                <label class="form-label">Promotion</label>
-                                <input type="number" name="promotion" id="promotion" class="form-control" />
-                            </div>
-                            <div class="form-group col-md-4">
-                                <label class="form-label">Weight</label>
-                                <input type="number" step="0.01" name="weight" id="weight" class="form-control" />
-                            </div>
 
-                        </div>
-                        <div class="form-row mb-2">
-                            <div class="form-group col-md-4">
-                                <label class="form-label">Ram</label>
-                                <input type="number" name="ram" id="ram" class="form-control" />
-                            </div>
-                            <div class="form-group col-md-4">
-                                <label class="form-label">Battery</label>
-                                <input type="text" name="battery" id="battery" class="form-control" />
-                            </div>
-                            <div class="form-group col-md-4">
-                                <label class="form-label">CPU</label>
-                                <input type="text" name="cpu" id="cpu" class="form-control" />
-                            </div>
-                        </div>
-                        <div class="form-row mb-2">
-                            <div class="form-group col-md-4">
-                                <label class="form-label">OS</label>
-                                <input type="text" name="os" id="os" class="form-control" />
-                            </div>
-                            <div class="form-group col-md-4">
-                                <label class="form-label">Screen</label>
-                                <input type="text" name="screen" id="screen" class="form-control" />
-                            </div>
-                            <div class="form-group col-md-4">
-                                <label class="form-label">Graphic Card</label>
-                                <input type="text" name="graphicCard" id="graphicCard" class="form-control" />
-                            </div>
-                        </div>
-                        <div class="mb-2 edit-show">
-                            <label class="form-label">Description</label>
-                            <textarea name="description" id="description" placeholder="Description" class="form-control"
-                                rows="30"></textarea>
-                        </div>
-                        <div class="mb-2 img-all edit-show">
-                            <div class="form-group">
-                                <div class="img-cover">
-                                    <div class="drag-area">
-                                        <span class="visible">
-                                            Drag & drop image here or
-                                            <span class="select" role="button">Browse</span>
-                                        </span>
-                                        <span class="on-drop">Drop images here</span>
-                                        <input name="images" type="file" class="images" multiple />
-                                    </div>
+        <!-- FOOTER -->
+        <div class="modal-footer">
 
-                                    <!-- IMAGE PREVIEW CONTAINER -->
-                                    <div class="img-show"></div>
-                                </div>
-                            </div>
-                        </div>
+          <input type="hidden" id="id" />
+          <input type="hidden" id="action" value="Add" />
 
-                    </div>
-                    <div class="modal-footer">
-                        <input type="hidden" name="id" id="id" />
-                        <input type="hidden" name="action" id="action" value="Add" />
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                        <button type="submit" class="btn btn-primary" id="action_button">Add</button>
-                    </div>
-                </form>
-            </div>
+          <button type="button"
+                  class="btn btn-secondary"
+                  data-bs-dismiss="modal">
+            Đóng
+          </button>
+
+          <button type="submit"
+                  id="action_button"
+                  class="btn"
+                  style="background:#7b4dbb; color:white;">
+            Lưu
+          </button>
+
         </div>
+
+      </form>
+
     </div>
-    <script src="/js/product.js"></script>
-    <script src="/js/upload.js"></script>
+  </div>
+</div>
+
+<script src="/js/product.js"></script>
+<script src="/js/upload.js"></script>
+
+<!-- STYLE -->
+<style>
+
+  #sample_data tbody tr:hover {
+    background: #f3edff;
+    transition: 0.2s;
+  }
+
+  .form-control:focus {
+    border-color: #a78bfa;
+    box-shadow: 0 0 0 0.15rem rgba(167,139,250,0.25);
+  }
+
+</style>

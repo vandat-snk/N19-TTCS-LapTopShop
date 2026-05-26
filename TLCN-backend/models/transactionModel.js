@@ -6,41 +6,44 @@ const transactionSchema = new mongoose.Schema(
     user: {
       type: mongoose.Schema.ObjectId,
       ref: "User",
-      required: [true, "Không thể để trống người nhận"],
+      required: [true, "Giao dịch phải liên kết với một người dùng"],
+    },
+    order: {
+      type: mongoose.Schema.ObjectId,
+      ref: "Order",
+    },
+    type: {
+      type: String,
+      enum: ["payment", "refund"],
+      required: [true, "Phải xác định loại giao dịch (payment/refund)"],
     },
     amount: {
       type: Number,
-      required: [true, "Không thể trống mục tiền nhận"],
-      min: [1, "Tiền nhận phải lớn hơn 0"],
+      required: [true, "Không thể trống mục số tiền"],
+      min: [1, "Số tiền phải lớn hơn 0"],
     },
-    createdAt: {
-      type: Date,
-      default: Date.now,
-    },
-    payments: {
+    paymentMethod: {
       type: String,
       required: [true, "Phải có phương thức thanh toán"],
       enum: {
-        values: ["vnpay", "paypal", "refund"],
-        message: "Phải có phương thức nhận tiền",
+        values: ["tiền mặt", "paypal"],
+        message: "Phương thức thanh toán không hợp lệ",
       },
-      default: "refund",
     },
-    order: String,
+    transactionCode: String,
+    status: {
+      type: String,
+      enum: ["pending", "success", "failed"],
+      default: "pending",
+    },
     invoicePayment: Object,
   },
   {
+    timestamps: true,
     toJSON: { virtuals: true },
     toObject: { virtuals: true },
   }
 );
-
-transactionSchema.statics.updateUserBalance = async function (userId, balance) {
-  await User.findByIdAndUpdate(userId, { $inc: { balance: balance } });
-};
-transactionSchema.post("save", function () {
-  this.constructor.updateUserBalance(this.user, this.amount);
-});
 
 const Transaction = mongoose.model("Transaction", transactionSchema);
 

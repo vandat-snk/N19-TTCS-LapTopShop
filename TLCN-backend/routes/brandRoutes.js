@@ -4,7 +4,7 @@ const authController = require("./../controllers/authController");
 
 const router = express.Router();
 
-router.route("/getTableBrand").get(authController.protect,authController.restrictTo("admin"),brandController.getTableBrand);
+router.route("/getTableBrand").get(authController.protect,authController.restrictTo("admin", "employee"),brandController.getTableBrand);
 
 router
   .route("/")

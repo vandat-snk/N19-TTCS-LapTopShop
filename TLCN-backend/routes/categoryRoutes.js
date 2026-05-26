@@ -5,7 +5,7 @@ const authController = require("./../controllers/authController");
 const router = express.Router();
 
 router.use(authController.protect);
-router.route("/getTableCategory").get(authController.restrictTo("admin"),categoryController.getTableCategory);
+router.route("/getTableCategory").get(authController.restrictTo("admin", "employee"),categoryController.getTableCategory);
 
 router
   .route("/")

@@ -10,7 +10,8 @@ $("#login").click(async function (e) {
       method: "post",
       data,
       success: (data) => {
-        if (data.data.user.role == "admin") {
+        // ĐÃ SỬA: Chấp nhận cả admin và employee
+        if (data.data.user.role === "admin" || data.data.user.role === "employee") {
           showAlert("success", "Login successfully!");
           window.setTimeout(() => {
             location.assign("/");
@@ -24,6 +25,7 @@ $("#login").click(async function (e) {
     showAlert("error", error.responseJSON.message);
   }
 });
+
 $("#checkLogin").on("change", async function () {
   try {
     await $.ajax({

@@ -94,7 +94,7 @@ const userSlice = createSlice({
   initialState: {
     current: JSON.parse(localStorage.getItem(StorageKeys.USER)) || null,
     status: action_status.IDLE,
-    user: {},
+    user: JSON.parse(localStorage.getItem(StorageKeys.USER)) || {},
     update: false,
   },
   reducers: {
@@ -104,6 +104,7 @@ const userSlice = createSlice({
       localStorage.removeItem("order");
       localStorage.removeItem("keyword");
       localStorage.removeItem("tokenStream");
+      localStorage.removeItem("cart");
       state.current = null;
     },
     refresh: (state, action) => {
@@ -116,6 +117,7 @@ const userSlice = createSlice({
     },
     [login.fulfilled]: (state, action) => {
       state.current = action.payload;
+      state.user = action.payload;
     },
     [loginWithGoogle.fulfilled]: (state, action) => {
       state.current = action.payload;

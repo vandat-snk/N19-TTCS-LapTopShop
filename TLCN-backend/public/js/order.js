@@ -11,7 +11,8 @@ const loadData = async () => {
         {
           data: "user",
           render: function (data) {
-            const n = data?data.name:null;
+            // Sử dụng Optional Chaining (?) để tránh lỗi nếu user bị xóa
+            const n = data ? data.name : "Tài khoản đã xóa";
             return '<div class= "my-3">' + n + "</div>";
           },
         },
@@ -19,13 +20,17 @@ const loadData = async () => {
           data: "cart",
           render: function (data) {
             let html = "";
-            data.forEach((value, index) => {
-              const name =
-                value.product.title.length > 39
-                  ? value.product.title.slice(0, 40) + "..."
-                  : value.product.title;
-              html += `<div class= "my-3"> ${name} </div>`;
-            });
+            if (data && data.length > 0) {
+              data.forEach((value, index) => {
+                // ĐÃ SỬA CHÍNH XÁC: Đọc trực tiếp value.title từ Snapshot, không dùng value.product.title
+                const titleText = value.title || "Sản phẩm không có tên";
+                const name =
+                  titleText.length > 39
+                    ? titleText.slice(0, 40) + "..."
+                    : titleText;
+                html += `<div class= "my-3"> ${name} </div>`;
+              });
+            }
             return html;
           },
         },
@@ -58,14 +63,13 @@ const loadData = async () => {
         {
           data: "totalPrice",
           render: function (data) {
-            return `<div class= "my-3">${data} VND</div>`;
+            return `<div class= "my-3">${data.toLocaleString()} VND</div>`; // Thêm toLocaleString() để phân tách hàng nghìn cho đẹp
           },
         },
         {
           data: null,
           render: function (row) {
             let btnView = `<a href="/orders/${row.id}"><button type="button" class="btn btn-primary btn-sm mr-1" >View</button></a>`;
-
             return `<div class= "my-3">${btnView}</div>`;
           },
         },
@@ -81,6 +85,7 @@ const loadData = async () => {
 function reloadData() {
   $("#sample_data").DataTable().ajax.reload();
 }
+
 $(document).ready(function () {
   loadData();
   $(".navbar-nav li").removeClass("active");

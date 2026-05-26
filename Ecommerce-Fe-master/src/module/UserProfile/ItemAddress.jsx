@@ -32,7 +32,6 @@ const schema = yup.object({
     }),
   address: yup.string().required("Vui lòng nhập địa chỉ nhà"),
   province: yup.string().required("Vui lòng chọn Tỉnh/ Thành phố"),
-  district: yup.string().required("Vui lòng chọn Quận/ Huyện"),
   ward: yup.string().required("Vui lòng chọn Phường/Xã"),
 });
 const ItemAddress = ({ data, data_key }) => {
@@ -52,7 +51,6 @@ const ItemAddress = ({ data, data_key }) => {
       fullname: "",
       sdt: "",
       province: "",
-      district: "",
       ward: "",
       address: "",
     },
@@ -62,45 +60,49 @@ const ItemAddress = ({ data, data_key }) => {
   const dispatch = useDispatch();
   const [province, setProvince] = useState([]);
   const [provinceId, setProvinceId] = useState("");
-  const [district, setDistrict] = useState([]);
-  const [districtId, setDistrictId] = useState("");
   const [ward, setWard] = useState([]);
 
   const fetchProvince = async () => {
-    const { data } = await axios.get("https://provinces.open-api.vn/api/p");
-    setProvince(data);
-  };
-
-  const fetchDistrict = async () => {
-    const { data } = await axios.get(
-      `https://provinces.open-api.vn/api/p/${provinceId}?depth=2`
-    );
-    setDistrict(data.districts);
+    try {
+      const { data } = await axios.get("https://esgoo.net/api-tinhthanh-new/1/0.htm");
+      if (data.error === 0) {
+        setProvince(data.data.map((item) => ({ name: item.full_name, code: item.id })));
+      }
+    } catch (error) {
+      console.log(error);
+    }
   };
 
   const fetchWard = async () => {
-    const { data } = await axios.get(
-      `https://provinces.open-api.vn/api/d/${districtId}?depth=2`
-    );
-    setWard(data.wards);
+    if (!provinceId) return;
+    try {
+      const { data } = await axios.get(
+        `https://esgoo.net/api-tinhthanh-new/2/${provinceId}.htm`
+      );
+      if (data.error === 0) {
+        setWard(data.data.map((item) => ({ name: item.full_name, code: item.id })));
+      }
+    } catch (error) {
+      console.log(error);
+    }
   };
 
   useEffect(() => {
     fetchProvince();
-    fetchDistrict();
+  }, []);
+
+  useEffect(() => {
     fetchWard();
-  }, [provinceId, districtId]);
+  }, [provinceId]);
 
   useEffect(() => {
     if (showModal === true) {
       setValue("province", data.province);
-      setValue("district", data.district);
       setValue("ward", data.ward);
       reset({
         fullname: data.name,
         sdt: data.phone,
         province: getValues("province"),
-        district: getValues("district"),
         ward: getValues("ward"),
         address: data.detail,
       });
@@ -143,7 +145,7 @@ const ItemAddress = ({ data, data_key }) => {
       name: values.fullname,
       phone: values.sdt,
       province: getValues("province"),
-      district: getValues("district"),
+      district: "",
       ward: getValues("ward"),
       detail: values.address,
       setDefault: data.setDefault,
@@ -184,8 +186,7 @@ const ItemAddress = ({ data, data_key }) => {
 
           <div className="flex flex-col">
             <span className="text-sm font-normal">
-              Địa chỉ: {data.detail} , {data.ward}, {data.district} ,
-              {data.province}
+              Địa chỉ: {data.detail} , {data.ward}, {data.province}
             </span>
             <span className="text-sm font-normal">
               Điện thoại: {data.phone}
@@ -286,25 +287,6 @@ const ItemAddress = ({ data, data_key }) => {
               </div>
 
               <div className="flex flex-col items-start gap-4 mb-5">
-                <Label htmlFor="district">* Quận/Huyện</Label>
-                <DropdownSelect
-                  control={control}
-                  name="district"
-                  dropdownLabel={data.district}
-                  setValue={setValue}
-                  data={district}
-                  onClick={(id) => setDistrictId(id)}
-                ></DropdownSelect>
-                {errors.dictrict && (
-                  <p className="text-red-500 text-base font-medium">
-                    {errors.dictrict?.message}
-                  </p>
-                )}
-              </div>
-            </div>
-
-            <div className="flex items-center justify-between">
-              <div className="flex flex-col items-start gap-4 mb-5">
                 <Label htmlFor="ward">* Phường/Xã</Label>
                 <DropdownSelect
                   control={control}
@@ -319,6 +301,9 @@ const ItemAddress = ({ data, data_key }) => {
                   </p>
                 )}
               </div>
+            </div>
+
+            <div className="flex items-center justify-between">
               <div className="flex flex-col items-start gap-4 mb-5">
                 <Label htmlFor="address">* Địa chỉ cụ thể</Label>
                 <Input

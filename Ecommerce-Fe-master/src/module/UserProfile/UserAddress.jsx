@@ -30,7 +30,6 @@ const schema = yup.object({
     }),
   address: yup.string().required("Vui lòng nhập địa chỉ nhà"),
   province: yup.string().required("Vui lòng chọn Tỉnh/ Thành phố"),
- // dictrict: yup.string().required("Vui lòng chọn Quận/Huyện"),
   ward: yup.string().required("Vui lòng chọn Phường/Xã"),
 });
 const UserAddress = () => {
@@ -48,7 +47,6 @@ const UserAddress = () => {
       fullname: "",
       sdt: "",
       province: "",
-      dictrict: "",
       ward: "",
       address: "",
     },
@@ -56,8 +54,6 @@ const UserAddress = () => {
   const [showModal, setShowModal] = useState(false);
   const [province, setProvince] = useState([]);
   const [provinceId, setProvinceId] = useState("");
-  const [district, setDistrict] = useState([]);
-  const [districtId, setDistrictId] = useState("");
   const [ward, setWard] = useState([]);
   const dispatch = useDispatch();
   const { add } = useSelector((state) => state.address);
@@ -77,29 +73,27 @@ const UserAddress = () => {
 
   const fetchProvince = async () => {
     try {
-      const { data } = await axios.get("https://provinces.open-api.vn/api/p");
-      setProvince(data);
+      const { data } = await axios.get("https://esgoo.net/api-tinhthanh-new/1/0.htm");
+      if (data.error === 0) {
+        setProvince(data.data.map((item) => ({ name: item.full_name, code: item.id })));
+      }
     } catch (error) {
       toast.error("Không thể tải danh sách tỉnh");
     }
   };
 
-  const fetchDistrict = async () => {
+  const fetchWard = async () => {
+    if (!provinceId) return;
     try {
       const { data } = await axios.get(
-        `https://provinces.open-api.vn/api/p/${provinceId}?depth=2`
+        `https://esgoo.net/api-tinhthanh-new/2/${provinceId}.htm`
       );
-      setDistrict(data.districts);
+      if (data.error === 0) {
+        setWard(data.data.map((item) => ({ name: item.full_name, code: item.id })));
+      }
     } catch (error) {
-      toast.error("Không thể tải danh sách quận/huyện");
+      toast.error("Không thể tải danh sách phường/xã");
     }
-  };
-
-  const fetchWard = async () => {
-    const { data } = await axios.get(
-      `https://provinces.open-api.vn/api/d/${districtId}?depth=2`
-    );
-    setWard(data.wards);
   };
 
   useEffect(() => {
@@ -108,9 +102,11 @@ const UserAddress = () => {
       behavior: "smooth",
     });
     fetchProvince();
-    fetchDistrict();
+  }, []);
+
+  useEffect(() => {
     fetchWard();
-  }, [provinceId, districtId]);
+  }, [provinceId]);
 
   useEffect(() => {
     if (showModal === false) {
@@ -118,7 +114,6 @@ const UserAddress = () => {
         fullname: "",
         sdt: "",
         province: setValue("province", ""),
-        dictrict: setValue("dictrict", ""),
         ward: setValue("ward", ""),
         address: "",
       });
@@ -137,7 +132,7 @@ const UserAddress = () => {
       phone: values.sdt,
       detail: values.address,
       province: getValues("province"),
-      district: getValues("dictrict"),
+      district: "",
       ward: getValues("ward"),
     };
 
@@ -154,7 +149,6 @@ const UserAddress = () => {
       fullname: "",
       sdt: "",
       province: "" && setValue("province", ""),
-      dictrict: "" && setValue("dictrict", ""),
       ward: "" && setValue("ward", ""),
       address: "",
     });
@@ -254,25 +248,6 @@ const UserAddress = () => {
               </div>
 
               <div className="flex flex-col items-start gap-4 mb-5">
-                <Label htmlFor="district">* Quận/Huyện</Label>
-                <DropdownSelect
-                  control={control}
-                  name="dictrict"
-                  dropdownLabel="Chọn"
-                  setValue={setValue}
-                  data={district}
-                  onClick={(id) => setDistrictId(id)}
-                ></DropdownSelect>
-                {errors.dictrict && (
-                  <p className="text-red-500 text-base font-medium">
-                    {errors.dictrict?.message}
-                  </p>
-                )}
-              </div>
-            </div>
-
-            <div className="flex items-center justify-between">
-              <div className="flex flex-col items-start gap-4 mb-5">
                 <Label htmlFor="ward">* Phường/Xã</Label>
                 <DropdownSelect
                   control={control}
@@ -287,6 +262,9 @@ const UserAddress = () => {
                   </p>
                 )}
               </div>
+            </div>
+
+            <div className="flex items-center justify-between">
               <div className="flex flex-col items-start gap-4 mb-5">
                 <Label htmlFor="address">* Địa chỉ cụ thể</Label>
                 <Input

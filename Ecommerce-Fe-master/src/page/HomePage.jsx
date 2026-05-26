@@ -20,17 +20,6 @@ const HomePage = () => {
   const [page, setPage] = useState(1);
 
   useEffect(() => {
-    if (
-      localStorage.getItem("jwt") &&
-      JSON.parse(localStorage.getItem("user")).active === "verify"
-    ) {
-      toast.dismiss();
-      toast.warning("Vui lòng xác thực tài khoản", { pauseOnHover: false });
-      return navigate("/verify");
-    }
-  }, []);
-
-  useEffect(() => {
     window.scrollTo({
       top: 0,
       behavior: "smooth",
@@ -93,8 +82,16 @@ const HomePage = () => {
       {status === action_status.SUCCEEDED && (
         <>
           <Banner />
-          <ProductListHome data={product} bg="bg1" className="pt-20" />
-          <ProductListHome data={product} bg="bg2" className="pt-20" />
+          <ProductListHome 
+            data={product?.slice(0, 10)} 
+            bg="bg1" 
+            className="pt-20" 
+          />
+          <ProductListHome 
+            data={[...(product || [])].sort((a, b) => (b.percent || 0) - (a.percent || 0)).slice(0, 10)} 
+            bg="bg2" 
+            className="pt-20" 
+          />
           <ProductList
             data={product}
             handlePageClick={handlePageClick}

@@ -5,7 +5,7 @@ const authController = require("./../controllers/authController");
 const router = express.Router();
 
 router.use(authController.protect);
-authController.restrictTo("admin", "employee");
+router.use(authController.restrictTo("admin", "employee")); 
 router.route("/getTableImport").get(importController.getTableImport);
 
 router

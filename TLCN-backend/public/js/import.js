@@ -16,20 +16,23 @@ const loadData = async () => {
         {
           data: "user",
           render: function (data) {
-            return '<div class= "my-3">' + data.name + "</div>";
+            const userName = (data && data.name) ? data.name : "<span class='text-danger'>Tài khoản đã xóa</span>";
+            return '<div class= "my-3">' + userName + "</div>";
           },
         },
         {
           data: "invoice",
           render: function (data) {
             let html = "";
-            data.forEach((value, index) => {
-              const name =
-                value.title.length > 39
-                  ? value.title.slice(0, 40) + "..."
-                  : value.title;
-              html += `<div class= "my-3"> ${name} </div>`;
-            });
+            if (Array.isArray(data)) {
+              data.forEach((value, index) => {
+                const title = value.title || "Sản phẩm";
+                const name = title.length > 39 ? title.slice(0, 40) + "..." : title;
+                html += `<div class= "my-3"> ${name} </div>`;
+              });
+            } else {
+              html = `<div class= "my-3"> ${data || "Không có chi tiết"} </div>`;
+            }
             return html;
           },
         },

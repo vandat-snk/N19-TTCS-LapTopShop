@@ -9,37 +9,33 @@ const orderSchema = new mongoose.Schema(
       ref: "User",
       required: [true, "Hóa đơn phải có người mua"],
     },
-    address: {
-      type: String,
-      required: [true, "Hóa đơn mua hàng phải có địa chỉ vận chuyển"],
-    },
-    receiver: {
-      type: String,
-      required: [true, "Hóa đơn mua hàng phải có thông tin người nhận"],
-    },
-    phone: {
-      type: String,
-      required: [true, "Hóa đơn mua hàng phải có số điện thoại người nhận"],
+    shippingDetails: {
+      receiver: {
+        type: String,
+        required: [true, "Hóa đơn mua hàng phải có thông tin người nhận"],
+      },
+      phone: {
+        type: String,
+        required: [true, "Hóa đơn mua hàng phải có số điện thoại người nhận"],
+      },
+      address: {
+        type: String,
+        required: [true, "Hóa đơn mua hàng phải có địa chỉ vận chuyển"],
+      },
     },
     cart: [
       {
-        product: Object,
+        product: {
+          type: mongoose.Schema.ObjectId,
+          ref: "Product",
+        },
+        title: String,
+        price: Number,
         quantity: Number,
+        image: String,
       },
     ],
-    createdAt: {
-      type: Date,
-      default: Date.now,
-    },
     totalPrice: Number,
-    payments: {
-      type: String,
-      required: [true, "Phải có phương thức thanh toán"],
-      enum: {
-        values: ["tiền mặt", "paypal", "vnpay", "số dư"],
-        message: "Phương thức thanh toán là tiền mặt hoặc ngân hàng",
-      },
-    },
     status: {
       type: String,
       enum: {
@@ -53,9 +49,21 @@ const orderSchema = new mongoose.Schema(
       },
       default: "Processed",
     },
-    invoicePayment: Object,
+    paymentInfo: {
+      method: {
+        type: String,
+        enum: {
+          values: ["tiền mặt", "paypal"],
+          message: "Phương thức thanh toán chỉ bao gồm tiền mặt hoặc paypal",
+        },
+        required: [true, "Phải có phương thức thanh toán"],
+      },
+      status: { type: String, default: "Pending" },
+      invoicePayment: String,
+    },
   },
   {
+    timestamps: true,
     toJSON: { virtuals: true },
     toObject: { virtuals: true },
   }
@@ -72,22 +80,17 @@ orderSchema.pre(/^find/, function (next) {
   next();
 });
 
-orderSchema.statics.updateUserBalance = async function (userId, balance) {
-  await User.findByIdAndUpdate(userId, { $inc: { balance: balance } });
-};
-orderSchema.post("save", function () {
-  if (this.payments === "số dư")
-    this.constructor.updateUserBalance(this.user, -this.totalPrice);
-});
-
 orderSchema.post("findOneAndUpdate", async function (doc) {
-  if (doc.payments !== "tiền mặt" && doc.status === "Cancelled")
+  // Nếu đơn hàng không phải tiền mặt (tức là đã thanh toán qua Paypal) và bị hủy
+  if (doc.paymentInfo && doc.paymentInfo.method === "paypal" && doc.status === "Cancelled") {
     await Transaction.create({
       user: doc.user._id.toString(),
       amount: doc.totalPrice,
-      payments: "refund",
+      payments: "refund_to_bank", // Đổi nhãn để quản lý biết cần chuyển khoản trả khách
       order: doc.id,
+      status: "Pending", // Trạng thái chờ kế toán chuyển khoản
     });
+  }
 });
 
 const Order = mongoose.model("Order", orderSchema);

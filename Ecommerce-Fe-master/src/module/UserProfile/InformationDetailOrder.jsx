@@ -19,6 +19,14 @@ const InformationDetailOrder = () => {
   const { orderId, statusId } = useSelector((state) => state.order);
   const { current } = useSelector((state) => state.user);
 
+  const shippingDetails = orderId?.shippingDetails || {};
+  const paymentInfo = orderId?.paymentInfo || {};
+
+  const receiver = shippingDetails?.receiver || orderId?.receiver || "";
+  const address = shippingDetails?.address || orderId?.address || "";
+  const phone = shippingDetails?.phone || orderId?.phone || "";
+  const paymentMethod = paymentInfo?.method || orderId?.payments || "";
+
   useEffect(() => {
     if (current === null) {
       toast.dismiss();
@@ -185,7 +193,7 @@ const InformationDetailOrder = () => {
               <div className="flex flex-col items-start">
                 <div className="flex items-center gap-x-2 text-base">
                   <span className=" font-medium ">Người nhận:</span>
-                  <span>{orderId?.receiver}</span>
+                  <span>{receiver}</span>
                 </div>
                 <div className="flex items-center gap-x-2 text-base">
                   <span className=" font-medium">Hình thức nhận hàng:</span>
@@ -193,11 +201,11 @@ const InformationDetailOrder = () => {
                 </div>
                 <div className="flex items-center gap-x-2 flex-wrap text-base">
                   <span className=" font-medium">Địa chỉ:</span>
-                  <span>{orderId?.address}</span>
+                  <span>{address}</span>
                 </div>
                 <div className="flex items-center gap-x-2 text-base">
                   <span className=" font-medium">Điện thoại:</span>
-                  <span>{orderId?.phone}</span>
+                  <span>{phone}</span>
                 </div>
               </div>
             </div>
@@ -250,7 +258,7 @@ const InformationDetailOrder = () => {
             </span>
             <div className="flex items-center mt-5 w-full justify-between">
               <span className="text-base  ">
-                Thanh toán bằng {orderId?.payments}
+                Thanh toán bằng {paymentMethod}
               </span>
               <span className="text-base font-medium">
                 {formatPrice(orderId?.totalPrice)}

@@ -131,6 +131,59 @@ productSchema.pre(/^find/, function (next) {
   next();
 });
 
+// === AUTO-EMBED HELPER: Tách biệt logic tạo Vector Embedding tái sử dụng ===
+const generateProductEmbedding = async function (doc) {
+  try {
+    if (!doc) return;
+    
+    // Nạp thêm thông tin brand & category để tối ưu hóa tìm kiếm ngữ nghĩa
+    await doc.populate("brand category");
+    const s = doc.specs || {};
+    const text = `
+      Tên: ${doc.title || ""}
+      Thương hiệu: ${doc.brand?.name || ""}
+      Danh mục: ${doc.category?.name || ""}
+      CPU: ${s.cpu || ""} RAM: ${s.ram || ""} 
+      Màn hình: ${s.screen || ""} GPU: ${s.graphicCard || ""}
+      Ổ cứng: ${s.storage || ""} Pin: ${s.battery || ""}
+      Nhu cầu: ${s.demand || ""} OS: ${s.os || ""}
+    `.trim();
+
+    const ollamaUrl = process.env.OLLAMA_URL || "http://localhost:11434";
+    const embedModel = process.env.OLLAMA_EMBED_MODEL || "nomic-embed-text";
+    const response = await fetch(`${ollamaUrl}/api/embeddings`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        model: embedModel,
+        prompt: text,
+      }),
+    });
+
+    if (!response.ok) throw new Error("Ollama embedding failed");
+    const result = await response.json();
+
+    // Dùng updateOne trực tiếp để tránh kích hoạt lại save/update hook vô hạn
+    await mongoose.model("Product").updateOne(
+      { _id: doc._id },
+      { $set: { embedding: result.embedding } }
+    );
+    console.log(`[Auto-Embed] ✅ ${doc.title}`);
+  } catch (err) {
+    console.error(`[Auto-Embed] ❌ ${doc?.title || "Sản phẩm"}:`, err.message);
+  }
+};
+
+// Hook chạy khi Thêm mới sản phẩm (create / save)
+productSchema.post("save", async function (doc) {
+  await generateProductEmbedding(doc);
+});
+
+// Hook chạy khi Cập nhật sản phẩm (findByIdAndUpdate / findOneAndUpdate)
+productSchema.post("findOneAndUpdate", async function (doc) {
+  await generateProductEmbedding(doc);
+});
+
 const Product = mongoose.model("Product", productSchema);
 
-module.exports = Product;
+module.exports = Product;

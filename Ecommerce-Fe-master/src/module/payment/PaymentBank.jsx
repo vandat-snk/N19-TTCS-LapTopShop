@@ -88,12 +88,28 @@ const PaymentBank = () => {
             );
             console.log(dataOrder);
             const data1 = {
-              address: dataOrder?.address,
-              phone: dataOrder?.phone,
-              receiver: dataOrder?.receiver,
+              shippingDetails: dataOrder?.shippingDetails || {
+                address: dataOrder?.address,
+                phone: dataOrder?.phone,
+                receiver: dataOrder?.receiver,
+              },
               cart: dataOrder?.cart,
               totalPrice: dataOrder?.totalPrice,
-              payments: dataOrder?.payments,
+              paymentInfo: {
+                method:
+                  dataOrder?.paymentInfo?.method ||
+                  dataOrder?.payments ||
+                  "paypal",
+                status: "Paid",
+                invoicePayment: JSON.stringify(order),
+              },
+
+              address:
+                dataOrder?.address || dataOrder?.shippingDetails?.address,
+              phone: dataOrder?.phone || dataOrder?.shippingDetails?.phone,
+              receiver:
+                dataOrder?.receiver || dataOrder?.shippingDetails?.receiver,
+              payments: dataOrder?.payments || dataOrder?.paymentInfo?.method,
               invoicePayment: order,
             };
             console.log(data1);

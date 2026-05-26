@@ -1,111 +1,165 @@
 <% layout('base') -%>
-<div class="container">
-  <h1 class="my-4 text-center text-primary">Locations</h1>
-  <div class="card">
-    <div class="card-header">
-      <div class="row">
-        <div class="col col-sm-9 text-dark">
-          <h4><strong>List Locations</strong></h4>
-        </div>
-        <div class="col col-sm-3">
-          <button
-            type="button"
-            id="add_data"
-            class="btn btn-success btn-sm float-end"
-          >
-            Add
-          </button>
-        </div>
-      </div>
+
+<div class="container-fluid py-4">
+
+  <!-- Header -->
+  <div class="d-flex justify-content-between align-items-center mb-4">
+
+<h3 class="fw-bold d-flex align-items-center gap-2" style="color:#d63384;">
+  <i class="fa-solid fa-location-dot"></i>
+  Quản lý vị trí
+</h3>
+    <button
+      type="button"
+      id="add_data"
+      class="btn btn-sm"
+      style="background:#ff4da6; color:white; border-radius:10px;">
+      + Thêm vị trí
+    </button>
+
+  </div>
+
+  <!-- Card -->
+  <div class="card shadow-sm border-0" style="border-radius:14px; overflow:hidden;">
+
+    <div class="card-header bg-white py-3 border-0">
+
+      <h5 class="mb-0 fw-semibold">
+        📋 Danh sách vị trí
+      </h5>
+
     </div>
+
     <div class="card-body">
+
       <div class="table-responsive">
-        <table class="table table-bordered table-hover" id="sample_data">
-          <thead>
-            <tr>
-              <th>Name</th>
-              <th>Address</th>
-              <th>Action</th>
+
+        <table class="table table-hover align-middle" id="sample_data">
+
+          <thead style="background:#fff0f6;">
+            <tr style="color:#d63384;">
+              <th>Tên</th>
+              <th>Địa chỉ</th>
+              <th>Thao tác</th>
             </tr>
           </thead>
+
           <tbody></tbody>
+
         </table>
+
       </div>
+
     </div>
+
   </div>
 </div>
-<div class="modal" id="action_modal">
-  <div class="modal-dialog">
-    <div class="modal-content">
+
+<!-- MODAL -->
+<div class="modal fade" id="action_modal">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content" style="border-radius:14px; overflow:hidden;">
+
       <form method="post" id="sample_form" enctype="multipart/form-data">
-        <div class="modal-header" id="dynamic_modal_title">
-          <h5 class="modal-title"></h5>
-          <button
-            type="button"
-            class="btn-close"
-            data-bs-dismiss="modal"
-            aria-label="Close"
-          ></button>
+
+        <!-- Header -->
+        <div class="modal-header" style="background:#fff0f6;">
+          <h5 class="modal-title fw-bold" id="dynamic_modal_title">
+            Thêm vị trí
+          </h5>
+
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
         </div>
+
+        <!-- Body -->
         <div class="modal-body">
-          <div class="mb-2 edit-show">
-            <label class="form-label">Name</label>
-            <input type="text" name="name" id="name" class="form-control" />
+
+          <!-- Name -->
+          <div class="mb-3">
+            <label class="form-label">Tên vị trí</label>
+            <input type="text" id="name" class="form-control" />
           </div>
-          <div class="mb-2 edit-show row">
+
+          <!-- Address + button -->
+          <div class="mb-3 row">
+
             <div class="col-md-8">
-              <label class="form-label">Address</label>
-              <input
-                type="text"
-                name="address"
-                id="address"
-                class="form-control"
-              />
+              <label class="form-label">Địa chỉ</label>
+              <input type="text" id="address" class="form-control" />
             </div>
+
             <div class="col-md-4 d-flex align-items-end">
-              <div class="btn btn-light" onclick="geocodeAddress()">Get location</div>
+                  <button type="button"
+                          class="btn w-100"
+                          style="background:#ff4da6; color:white;"
+                          onclick="geocodeAddress()">
+                    <i class="fa-solid fa-map-pin"></i> Lấy tọa độ
+                  </button> 
             </div>
+
           </div>
-          <div class="mb-2 edit-show">
-            <label class="form-label">Longitude</label>
-            <input
-              type="text"
-              name="longitude"
-              id="longitude"
-              class="form-control"
-              disabled
-            />
+
+          <!-- Longitude -->
+          <div class="mb-3">
+            <label class="form-label">Kinh độ</label>
+            <input type="text" id="longitude" class="form-control bg-light" disabled />
           </div>
-          <div class="mb-2 edit-show">
-            <label class="form-label">Latitude</label>
-            <input
-              type="text"
-              name="latitude"
-              id="latitude"
-              class="form-control"
-              disabled
-            />
+
+          <!-- Latitude -->
+          <div class="mb-3">
+            <label class="form-label">Vĩ độ</label>
+            <input type="text" id="latitude" class="form-control bg-light" disabled />
           </div>
-          <div class="mb-2 edit-show map-container">
-            <div id="map"></div>
+
+          <!-- Map -->
+          <div class="mb-3">
+            <label class="form-label">Bản đồ</label>
+            <div id="map" style="height:300px; border-radius:12px; overflow:hidden;"></div>
           </div>
+
         </div>
+
+        <!-- Footer -->
         <div class="modal-footer">
-          <input type="hidden" name="id" id="id" />
-          <input type="hidden" name="action" id="action" value="Add" />
-          <button
-            type="button"
-            class="btn btn-secondary"
-            data-bs-dismiss="modal"
-          >
-            Close
+
+          <input type="hidden" id="id" />
+          <input type="hidden" id="action" value="Add" />
+
+          <button type="button"
+                  class="btn btn-secondary"
+                  data-bs-dismiss="modal">
+            Đóng
           </button>
-          <button type="submit" class="btn btn-primary" id="action_button">
-            Add
+
+          <button type="submit"
+                  class="btn"
+                  id="action_button"
+                  style="background:#ff4da6; color:white;">
+            Thêm
           </button>
+
         </div>
+
       </form>
+
     </div>
   </div>
 </div>
+
+<!-- UI nhỏ -->
+<style>
+  #sample_data thead th {
+    font-weight: 600;
+  }
+
+  .card {
+    border-radius: 14px !important;
+  }
+
+  .table-hover tbody tr:hover {
+    background: #fff0f6;
+    transition: 0.2s;
+  }
+</style>
+
 <script src="/js/location.js"></script>

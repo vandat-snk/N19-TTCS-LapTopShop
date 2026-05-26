@@ -1,6 +1,6 @@
 import React, { useEffect } from "react";
 import { useForm } from "react-hook-form";
-import { Link } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import Button from "../components/button/Button";
 import Checkbox from "../components/checkbox/Checkbox";
 import Field from "../components/field/Field";
@@ -12,7 +12,6 @@ import * as yup from "yup";
 import { yupResolver } from "@hookform/resolvers/yup";
 import { useDispatch } from "react-redux";
 import { toast } from "react-toastify";
-import { useNavigate } from "react-router-dom";
 import { register } from "../redux/auth/userSlice";
 import { unwrapResult } from "@reduxjs/toolkit";
 
@@ -45,6 +44,13 @@ const schema = yup.object({
 });
 
 const SignUpPage = () => {
+  const location = useLocation();
+  const navigate = useNavigate();
+  const dispatch = useDispatch();
+
+  // Dữ liệu được truyền từ VerifyPage khi bấm "Quay lại"
+  const signupValues = location.state?.signupValues || {};
+
   const {
     handleSubmit,
     control,
@@ -54,34 +60,35 @@ const SignUpPage = () => {
     mode: "onChange",
     resolver: yupResolver(schema),
     defaultValues: {
-      fullname: "",
-      email: "",
-      password: "",
-      retypePassword: "",
-      term: false,
+      fullname: signupValues.fullname || "",
+      email: signupValues.email || "",
+      password: signupValues.password || "",
+      retypePassword: signupValues.retypePassword || "",
+      term: signupValues.term || false,
     },
   });
-
-  const dispatch = useDispatch();
-  const navigate = useNavigate();
 
   useEffect(() => {
     window.scrollTo({
       top: 0,
       behavior: "smooth",
     });
-    if (
-      localStorage.getItem("jwt") &&
-      JSON.parse(localStorage.getItem("user")).active === "verify"
-    ) {
+
+    const jwt = localStorage.getItem("jwt");
+    const user = localStorage.getItem("user")
+      ? JSON.parse(localStorage.getItem("user"))
+      : null;
+
+    if (jwt && user?.active === "verify") {
       toast.dismiss();
       toast.warning("Vui lòng xác thực tài khoản", { pauseOnHover: false });
       return navigate("/verify");
     }
-  }, []);
+  }, [navigate]);
 
   const handleSignUp = async (values) => {
     if (!isValid) return;
+
     try {
       const data = {
         name: values.fullname,
@@ -89,12 +96,16 @@ const SignUpPage = () => {
         password: values.password,
         passwordConfirm: values.retypePassword,
       };
+
       const action = register(data);
       const resultAction = await dispatch(action);
-      const user = unwrapResult(resultAction);
-      console.log(user);
+      unwrapResult(resultAction);
+
       toast.dismiss();
-      toast.success("Đăng ký tài khoản thành công", { pauseOnHover: false });
+      toast.success("Đăng ký tài khoản thành công", {
+        pauseOnHover: false,
+      });
+
       reset({
         fullname: "",
         email: "",
@@ -102,7 +113,12 @@ const SignUpPage = () => {
         retypePassword: "",
         term: false,
       });
-      navigate("/verify");
+
+      navigate("/verify", {
+        state: {
+          signupValues: values,
+        },
+      });
     } catch (error) {
       toast.dismiss();
       toast.error(error.message, { pauseOnHover: false });
@@ -144,7 +160,7 @@ const SignUpPage = () => {
 
         <Field>
           <Label htmlFor="password">Mật khẩu</Label>
-          <InputPasswordToggle control={control}></InputPasswordToggle>
+          <InputPasswordToggle control={control} />
           {errors.password && (
             <p className="text-red-500 text-base font-medium">
               {errors.password?.message}
@@ -153,11 +169,8 @@ const SignUpPage = () => {
         </Field>
 
         <Field>
-          <Label htmlFor="password">Nhập lại mật khẩu</Label>
-          <InputPasswordToggle
-            control={control}
-            name="retypePassword"
-          ></InputPasswordToggle>
+          <Label htmlFor="retypePassword">Nhập lại mật khẩu</Label>
+          <InputPasswordToggle control={control} name="retypePassword" />
           {errors.retypePassword && (
             <p className="text-red-500 text-base font-medium">
               {errors.retypePassword?.message}
@@ -192,9 +205,9 @@ const SignUpPage = () => {
           Đăng ký
         </Button>
       </form>
+
       <Field>
         <div className="flex items-center mx-auto pb-10">
-          {" "}
           <span className="text-black text-base">
             Bạn đã có tài khoản? &nbsp;
           </span>

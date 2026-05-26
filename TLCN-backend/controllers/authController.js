@@ -264,9 +264,12 @@ exports.isLoggedIn = async (req, res, next) => {
 
 exports.restrictTo = (...roles) => {
   return (req, res, next) => {
-    // roles ['admin', 'employee',[user]]. role='user'
-    if (req.user == undefined || !roles.includes(req.user.role)) {
-      return next(new AppError("Bạn không có quyền thực hiện", 403));
+    // SỬA Ở ĐÂY: Thêm res.locals.user để hỗ trợ cho giao diện EJS
+    const currentUser = req.user || res.locals.user;
+
+    if (currentUser == undefined || !roles.includes(currentUser.role)) {
+      // Đá về trang lỗi thay vì ném ra cục JSON AppError
+      return res.redirect("/error"); 
     }
     next();
   };
@@ -393,7 +396,7 @@ exports.googleLogin = catchAsync(async (req, res) => {
   // 1) Check if user exists
   const data = await User.findOne({ email });
   // 2) Check if user exist
-  if (data.role == "admin") {
+  if (data.role === "admin" || data.role === "employee") {
     createSendToken(data, 200, res);
   }
   // 3) If user does not exist, create one

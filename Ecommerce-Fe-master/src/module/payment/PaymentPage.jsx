@@ -69,29 +69,52 @@ const PaymentPage = () => {
     }).then(async (result) => {
       if (result.isConfirmed) {
         const dataAdress = {
+          shippingDetails: {
+            address: `${data?.detail}, ${data?.ward}, ${data?.district}, ${data?.province}`,
+            phone: data?.phone,
+            receiver: data?.name,
+          },
+          cart: cart,
+          totalPrice: cart?.reduce(
+            (count, item) =>
+              count +
+              item.quantity * (item.product.promotion || item.product.price),
+            0
+          ),
+          paymentInfo: {
+            method: paymentMethod,
+          },
+
           address: `${data?.detail}, ${data?.ward}, ${data?.district}, ${data?.province}`,
           phone: data?.phone,
           receiver: data?.name,
-          cart: cart,
-          totalPrice: cart?.reduce(
-            (count, item) => count + item.quantity * item.product.promotion,
-            0
-          ),
           payments: paymentMethod,
         };
         if (paymentMethod === "tiền mặt") {
           try {
             dispatch(resetCart());
             const response = await orderApi.createOrder(dataAdress);
+
+            const createdOrder =
+              response?.data?.data?.data ||
+              response?.data?.data ||
+              response?.data ||
+              {};
+
             const data1 = {
-              id: response.data.id,
-              total: response.data.totalPrice,
+              id: createdOrder?._id || response?.data?.id,
+              total: createdOrder?.totalPrice || response?.data?.totalPrice,
+              cart: createdOrder?.cart || [],
             };
+
             localStorage.setItem("order", JSON.stringify(data1));
+
+            setTimeout(() => {
+              navigate("/payment-cash");
+            }, 100);
           } catch (error) {
             console.log(error.message);
           }
-          navigate("/payment-cash");
         } else {
           localStorage.setItem("order", JSON.stringify(dataAdress));
           navigate("/payment-bank");
@@ -194,7 +217,9 @@ const PaymentPage = () => {
                     {formatPrice(
                       cart?.reduce(
                         (count, item) =>
-                          count + item.quantity * item.product.promotion,
+                          count +
+                          item.quantity *
+                            (item.product.promotion || item.product.price),
                         0
                       )
                     )}
@@ -214,7 +239,9 @@ const PaymentPage = () => {
                     {formatPrice(
                       cart?.reduce(
                         (count, item) =>
-                          count + item.quantity * item.product.promotion,
+                          count +
+                          item.quantity *
+                            (item.product.promotion || item.product.price),
                         0
                       )
                     )}

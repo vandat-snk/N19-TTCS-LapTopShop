@@ -24,11 +24,13 @@ const Banner = () => {
           {bannerData.length > 0 &&
             bannerData.map((item) => (
               <SwiperSlide key={item.id}>
-                <img
-                  src={item.img}
-                  alt=""
-                  className="w-full h-full object-cover"
-                />
+                <div className="w-full h-[200px] sm:h-[300px] md:h-[400px] lg:h-[500px]">
+                  <img
+                    src={item.img}
+                    alt=""
+                    className="w-full h-full object-cover"
+                  />
+                </div>
               </SwiperSlide>
             ))}
         </Swiper>
