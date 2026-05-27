@@ -95,10 +95,13 @@ const cartSlice = createSlice({
     },
 
     resetCart(state) {
-      // Chỉ reset giỏ hàng đang hiển thị sau khi logout.
-      // Không xóa cart_${userId}, để login lại user đó còn lấy lại được.
+      // Fix: phải xóa cả cart_${userId} mới thực sự clear giỏ hàng
+      // Trước đây chỉ xóa "cart" chung → reload lại giỏ hàng vẫn còn vì đọc từ cart_${userId}
+      const userId = getCurrentUserId();
+      const cartKey = getUserCartKey(userId);
+      localStorage.removeItem(cartKey);   // xóa cart_userId123
+      localStorage.removeItem("cart");    // xóa cart chung (dùng ở CartPage)
       state.cart = [];
-      localStorage.removeItem("cart");
     },
   },
 });

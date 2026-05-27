@@ -109,6 +109,7 @@ const UserOrder = () => {
             Đang giao
           </button>
 
+
           <button
             className={`flex items-center gap-x-3 cursor-pointer py-2 px-4  text-base font-medium rounded-lg border border-gray-300 ${
               state === "Success" ? "bg-blue-500 text-white" : ""
@@ -253,37 +254,35 @@ const UserOrder = () => {
                             <td>{formatPrice(item.totalPrice)}</td>
                             {item?.status === "Processed" && (
                               <td>
-                                <span className="p-2 rounded-lg text-white bg-orange-400">
+                                <span className="px-3 py-1 inline-block whitespace-nowrap rounded-lg text-white bg-orange-400">
                                   Đang xử lý
                                 </span>
                               </td>
                             )}
                             {item?.status === "Waiting Goods" && (
                               <td>
-                                <span className="p-2 rounded-lg text-white bg-yellow-400">
+                                <span className="px-3 py-1 inline-block whitespace-nowrap rounded-lg text-white bg-yellow-400">
                                   Đợi lấy hàng
                                 </span>
                               </td>
                             )}
-
                             {item?.status === "Delivery" && (
                               <td>
-                                <span className="p-2 rounded-lg text-white bg-blue-400">
+                                <span className="px-3 py-1 inline-block whitespace-nowrap rounded-lg text-white bg-blue-400">
                                   Đang giao
                                 </span>
                               </td>
                             )}
-
                             {item?.status === "Cancelled" && (
                               <td>
-                                <span className="p-2 rounded-lg text-white bg-red-400">
+                                <span className="px-3 py-1 inline-block whitespace-nowrap rounded-lg text-white bg-red-400">
                                   Đã hủy đơn
                                 </span>
                               </td>
                             )}
                             {item?.status === "Success" && (
                               <td>
-                                <span className="p-2 rounded-lg text-white  bg-green-400">
+                                <span className="px-3 py-1 inline-block whitespace-nowrap rounded-lg text-white bg-green-400">
                                   Thành công
                                 </span>
                               </td>
@@ -293,68 +292,66 @@ const UserOrder = () => {
                     </>
                   )}
                   {state === "Processed" && (
-                  <>
-                    {order?.length > 0 &&
-                      order.map((item) => (
-                        <tr className="text-base" key={item._id}>
-                          <td
-                            className="cursor-pointer text-blue-600 hover:text-blue-900"
-                            onClick={() =>
-                              navigate(`/account/orders/${item._id}`)
-                            }
-                            title={item._id}
-                          >
-                            {item._id.slice(0, 10)}
-                          </td>
-                          <td>
-                            {format(new Date(item?.createdAt), "HH:mm")}
-                            &nbsp;&nbsp;
-                            {format(new Date(item?.createdAt), "dd/MM/yyyy")}
-                          </td>
-                          <td>{getFirstProductTitle(item)}</td>
-                          <td>{formatPrice(item.totalPrice)}</td>
-                          <td>
-                            <span className="p-2 rounded-lg text-white bg-orange-400">
-                              Đang xử lý
-                            </span>
-                          </td>
-                        </tr>
-                      ))}
-                  </>
-                )}
-
-                {state === "Delivery" && (
-                  <>
-                    {order?.length > 0 &&
-                      order.map((item) => (
-                        <tr className="text-base" key={item._id}>
-                          <td
-                            className="cursor-pointer text-blue-600 hover:text-blue-900"
-                            onClick={() =>
-                              navigate(`/account/orders/${item._id}`)
-                            }
-                            title={item._id}
-                          >
-                            {item._id.slice(0, 10)}
-                          </td>
-                          <td>
-                            {format(new Date(item?.createdAt), "HH:mm")}
-                            &nbsp;&nbsp;
-                            {format(new Date(item?.createdAt), "dd/MM/yyyy")}
-                          </td>
-                          <td>{getFirstProductTitle(item)}</td>
-                          <td>{formatPrice(item.totalPrice)}</td>
-                          <td>
-                            <span className="p-2 rounded-lg text-white bg-blue-400">
-                              Đang giao
-                            </span>
-                          </td>
-                        </tr>
-                      ))}
-                  </>
-                )}
-
-                {state === "Cancelled" && (
+                    <>
+                      {order?.length > 0 &&
+                        order.map((item) => (
+                          <tr className="text-base" key={item._id}>
+                            <td
+                              className="cursor-pointer text-blue-600 hover:text-blue-900"
+                              onClick={() =>
+                                navigate(`/account/orders/${item._id}`)
+                              }
+                              title={item._id}
+                            >
+                              {item._id.slice(0, 10)}
+                            </td>
+                            <td>
+                              {format(new Date(item?.createdAt), "HH:mm")}
+                              &nbsp;&nbsp;
+                              {format(new Date(item?.createdAt), "dd/MM/yyyy")}
+                            </td>
+                            <td>{getFirstProductTitle(item)}</td>
+                            <td>{formatPrice(item.totalPrice)}</td>
+                            <td>
+                              <span className="px-3 py-1 inline-block whitespace-nowrap rounded-lg text-white bg-orange-400">
+                                Đang xử lý
+                              </span>
+                            </td>
+                          </tr>
+                        ))}
+                    </>
+                  )}
+                  {state === "Delivery" && (
+                    <>
+                      {order?.length > 0 &&
+                        order.map((item) => (
+                          <tr className="text-base" key={item._id}>
+                            <td
+                              className="cursor-pointer text-blue-600 hover:text-blue-900"
+                              onClick={() =>
+                                navigate(`/account/orders/${item._id}`)
+                              }
+                              title={item._id}
+                            >
+                              {item._id.slice(0, 10)}
+                            </td>
+                            <td>
+                              {format(new Date(item?.createdAt), "HH:mm")}
+                              &nbsp;&nbsp;
+                              {format(new Date(item?.createdAt), "dd/MM/yyyy")}
+                            </td>
+                            <td>{getFirstProductTitle(item)}</td>
+                            <td>{formatPrice(item.totalPrice)}</td>
+                            <td>
+                              <span className="px-3 py-1 inline-block whitespace-nowrap rounded-lg text-white bg-blue-400">
+                                Đang giao
+                              </span>
+                            </td>
+                          </tr>
+                        ))}
+                    </>
+                  )}
+                  {state === "Cancelled" && (
                     <>
                       {order?.length > 0 &&
                         order.map((item) => (
@@ -377,7 +374,7 @@ const UserOrder = () => {
                             <td>{formatPrice(item.totalPrice)}</td>
 
                             <td>
-                              <span className="p-2 rounded-lg text-white bg-red-400">
+                              <span className="px-3 py-1 inline-block whitespace-nowrap rounded-lg text-white bg-red-400">
                                 Đã hủy đơn
                               </span>
                             </td>
@@ -408,7 +405,7 @@ const UserOrder = () => {
                             <td>{formatPrice(item.totalPrice)}</td>
 
                             <td>
-                              <span className="p-2 rounded-lg text-white  bg-green-400">
+                              <span className="px-3 py-1 inline-block whitespace-nowrap rounded-lg text-white bg-green-400">
                                 Thành công
                               </span>
                             </td>
