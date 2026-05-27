@@ -61,11 +61,17 @@ const InformationDetailOrder = () => {
           },
           id: params.id,
         };
+
         try {
-          dispatch(cancelOrder(data));
-          navigate(-1);
+          await dispatch(cancelOrder(data));
+
+          // Lấy lại chi tiết đơn sau khi hủy để UI đổi ngay sang "Đã hủy đơn"
+          await dispatch(getOrderId(params.id));
+
+          toast.success("Hủy đơn hàng thành công");
         } catch (error) {
           console.log(error.message);
+          toast.error("Hủy đơn hàng thất bại");
         }
       }
     });
@@ -234,6 +240,11 @@ const InformationDetailOrder = () => {
                   {orderId?.status === "Waiting Goods" && (
                     <span className="px-2 rounded-lg text-white bg-yellow-400">
                       Đợi lấy hàng
+                    </span>
+                  )}
+                  {orderId?.status === "Delivery" && (
+                    <span className="px-2 rounded-lg text-white bg-blue-400 text-base">
+                      Đang giao
                     </span>
                   )}
                 </div>

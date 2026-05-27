@@ -189,6 +189,21 @@ exports.createOrder = catchAsync(async (req, res, next) => {
   // 5. Tạo đơn hàng
   const doc = await Order.create(req.body);
 
+  // 6. Trừ tồn kho sau khi tạo đơn hàng thành công
+  await Product.bulkWrite(
+    realCart.map((item) => ({
+      updateOne: {
+        filter: {
+          _id: item.product,
+          inventory: { $gte: item.quantity },
+        },
+        update: {
+          $inc: { inventory: -item.quantity },
+        },
+      },
+    }))
+  );
+
   if (doc.paymentInfo?.method === "paypal") {
     try {
       const invoice =
@@ -226,7 +241,7 @@ exports.createOrder = catchAsync(async (req, res, next) => {
 });
 
 exports.updateOrder = catchAsync(async (req, res, next) => {
-  if (req.body.status == "Cancelled") {
+  if (req.body.status == "Cancelled" && req.order.status !== "Cancelled") {
     const cart = req.order.cart;
     for (const value of cart) {
       const productId = value.product._id || value.product;
