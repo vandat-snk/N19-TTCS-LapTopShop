@@ -106,6 +106,78 @@ export const calculateScore = (product) => {
   return score; // Max 19 điểm
 };
 
+// --- Hàm tính điểm CPU dùng để so sánh đối đầu trực tiếp ---
+export const getCpuScore = (cpu) => {
+  let score = 0;
+  // Tier S+ (Chip đầu bảng)
+  if (
+    cpu.includes("i9") ||
+    cpu.includes("ryzen 9") ||
+    cpu.includes("m3 max") ||
+    cpu.includes("m2 max") ||
+    cpu.includes("m1 max") ||
+    cpu.includes("m1 ultra") ||
+    cpu.includes("core ultra 9")
+  ) {
+    score += 50;
+  }
+  // Tier A (Chip cao cấp)
+  else if (
+    cpu.includes("i7") ||
+    cpu.includes("ryzen 7") ||
+    cpu.includes("m3 pro") ||
+    cpu.includes("m2 pro") ||
+    cpu.includes("m1 pro") ||
+    cpu.includes("core ultra 7")
+  ) {
+    score += 40;
+  }
+  // Tier B (Chip tầm trung)
+  else if (
+    cpu.includes("i5") ||
+    cpu.includes("ryzen 5") ||
+    cpu.includes("m3") ||
+    cpu.includes("m2") ||
+    cpu.includes("m1") ||
+    cpu.includes("core ultra 5")
+  ) {
+    score += 30;
+  }
+  // Tier C (Chip phổ thông)
+  else if (cpu.includes("i3") || cpu.includes("ryzen 3")) {
+    score += 20;
+  }
+
+  // Hậu tố dòng chip (tác động hiệu năng)
+  if (cpu.includes("hx") || cpu.includes(" hk")) score += 5; // Dòng HX/HK: cao nhất
+  else if (cpu.includes(" h")) score += 4;                    // Dòng H: gaming/workstation
+  else if (cpu.includes(" p")) score += 3;                    // Dòng P: cân bằng
+  else if (cpu.includes(" u")) score += 2;                    // Dòng U: tiết kiệm pin
+
+  return score;
+};
+
+// --- Hàm tính điểm GPU dùng để so sánh đối đầu trực tiếp ---
+export const getGpuScore = (gpu) => {
+  if (gpu.includes("rtx 40") || gpu.includes("rx 7")) return 60;
+  if (gpu.includes("rtx 30") || gpu.includes("rx 6")) return 50;
+  if (gpu.includes("rtx") || gpu.includes("gtx 16") || gpu.includes("arc")) return 35;
+  if (gpu.includes("gtx") || gpu.includes("mx")) return 20;
+  return 5; // Card tích hợp
+};
+
+// --- Hàm tính điểm Màn hình dùng để so sánh đối đầu trực tiếp ---
+export const getScreenScore = (scr) => {
+  let score = 0;
+  if (scr.includes("oled") || scr.includes("mini led")) score += 20;
+  if (scr.includes("4k") || scr.includes("uhd")) score += 20;
+  else if (scr.includes("2k") || scr.includes("wqhd") || scr.includes("qhd")) score += 15;
+  if (scr.includes("240hz")) score += 15;
+  else if (scr.includes("165hz") || scr.includes("144hz")) score += 10;
+  else if (scr.includes("120hz")) score += 5;
+  return score;
+};
+
 // ============================================================
 // Hàm sinh lời khuyên tư vấn so sánh 2 laptop
 // Fix: getCpuScore bổ sung đầy đủ tier chip Apple M-series còn thiếu
@@ -124,77 +196,7 @@ export const generateRealLifeSuggestion = (item1, item2) => {
   const advantages1 = [];
   const advantages2 = [];
 
-  // --- Hàm tính điểm CPU dùng để so sánh đối đầu trực tiếp ---
-  const getCpuScore = (cpu) => {
-    let score = 0;
-    // Tier S+ (Chip đầu bảng)
-    if (
-      cpu.includes("i9") ||
-      cpu.includes("ryzen 9") ||
-      cpu.includes("m3 max") ||
-      cpu.includes("m2 max") ||
-      cpu.includes("m1 max") ||
-      cpu.includes("m1 ultra") ||
-      cpu.includes("core ultra 9")
-    ) {
-      score += 50;
-    }
-    // Tier A (Chip cao cấp)
-    else if (
-      cpu.includes("i7") ||
-      cpu.includes("ryzen 7") ||
-      cpu.includes("m3 pro") ||
-      cpu.includes("m2 pro") ||
-      cpu.includes("m1 pro") ||
-      cpu.includes("core ultra 7")
-    ) {
-      score += 40;
-    }
-    // Tier B (Chip tầm trung)
-    else if (
-      cpu.includes("i5") ||
-      cpu.includes("ryzen 5") ||
-      cpu.includes("m3") ||
-      cpu.includes("m2") ||
-      cpu.includes("m1") ||
-      cpu.includes("core ultra 5")
-    ) {
-      score += 30;
-    }
-    // Tier C (Chip phổ thông)
-    else if (cpu.includes("i3") || cpu.includes("ryzen 3")) {
-      score += 20;
-    }
 
-    // Hậu tố dòng chip (tác động hiệu năng)
-    if (cpu.includes("hx") || cpu.includes(" hk")) score += 5; // Dòng HX/HK: cao nhất
-    else if (cpu.includes(" h")) score += 4;                    // Dòng H: gaming/workstation
-    else if (cpu.includes(" p")) score += 3;                    // Dòng P: cân bằng
-    else if (cpu.includes(" u")) score += 2;                    // Dòng U: tiết kiệm pin
-
-    return score;
-  };
-
-  // --- Hàm tính điểm GPU dùng để so sánh đối đầu trực tiếp ---
-  const getGpuScore = (gpu) => {
-    if (gpu.includes("rtx 40") || gpu.includes("rx 7")) return 60;
-    if (gpu.includes("rtx 30") || gpu.includes("rx 6")) return 50;
-    if (gpu.includes("rtx") || gpu.includes("gtx 16") || gpu.includes("arc")) return 35;
-    if (gpu.includes("gtx") || gpu.includes("mx")) return 20;
-    return 5; // Card tích hợp
-  };
-
-  // --- Hàm tính điểm Màn hình dùng để so sánh đối đầu trực tiếp ---
-  const getScreenScore = (scr) => {
-    let score = 0;
-    if (scr.includes("oled") || scr.includes("mini led")) score += 20;
-    if (scr.includes("4k") || scr.includes("uhd")) score += 20;
-    else if (scr.includes("2k") || scr.includes("wqhd") || scr.includes("qhd")) score += 15;
-    if (scr.includes("240hz")) score += 15;
-    else if (scr.includes("165hz") || scr.includes("144hz")) score += 10;
-    else if (scr.includes("120hz")) score += 5;
-    return score;
-  };
 
   // 1. So sánh CPU
   const cpu1 = (specs1.cpu || "").toLowerCase();
