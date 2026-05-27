@@ -195,6 +195,7 @@ $(document).on("click", ".edit", function () {
       $("#os").val(specs.os);
       $("#screen").val(specs.screen);
       $("#graphicCard").val(specs.graphicCard);
+      $("#storage").val(specs.storage);
 
       if (tinymce.get("description")) {
         tinymce.get("description").setContent(product.description || "");

@@ -11,7 +11,7 @@ import slugify from "slugify";
 import ModalAdvanced from "../../components/Modal/ModalAdvanced";
 import { formatPrice } from "../../utils/formatPrice";
 import { disableBodyScroll, enableBodyScroll } from "body-scroll-lock";
-import { calculateScore, generateRealLifeSuggestion } from "../../utils/calculateScore";
+import { calculateScore, generateRealLifeSuggestion, getStorageValue } from "../../utils/calculateScore";
 
 const ProductListHome = ({ data, bg = "", className = "" }) => {
   const navigate = useNavigate();
@@ -291,6 +291,55 @@ const ProductListHome = ({ data, bg = "", className = "" }) => {
                       {selectedItems[1]?.specs?.ram}
                       {parseFloat(selectedItems[1]?.specs?.ram) -
                         parseFloat(selectedItems[0]?.specs?.ram) >=
+                        0 && (
+                          <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            strokeWidth="1.5"
+                            stroke="green"
+                            className="w-10 h-10"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                            />
+                          </svg>
+                        )}
+                    </span>
+                  </td>
+                </tr>
+                <tr>
+                  <td className="text-base font-semibold">Ổ cứng</td>
+                  <td>
+                    <span className="text-base font-normal flex items-center gap-x-2">
+                      {selectedItems[0]?.specs?.storage}
+                      {getStorageValue(selectedItems[0]?.specs?.storage) -
+                        getStorageValue(selectedItems[1]?.specs?.storage) >=
+                        0 && (
+                          <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            strokeWidth="1.5"
+                            stroke="green"
+                            className="w-10 h-10"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                            />
+                          </svg>
+                        )}
+                    </span>
+                  </td>
+                  <td>
+                    <span className="text-base font-normal flex items-center gap-x-2">
+                      {selectedItems[1]?.specs?.storage}
+                      {getStorageValue(selectedItems[1]?.specs?.storage) -
+                        getStorageValue(selectedItems[0]?.specs?.storage) >=
                         0 && (
                           <svg
                             xmlns="http://www.w3.org/2000/svg"

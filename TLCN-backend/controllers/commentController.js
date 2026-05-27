@@ -19,7 +19,7 @@ exports.isOwner = factory.checkPermission(Comment);
 exports.likeComment = catchAsync(async (req, res, next) => {
   const data = await Comment.findById(req.params.id);
   const like = (data.like);
-//   console.log(like,typeof like)
+  //   console.log(like,typeof like)
   if (!data) return next(new AppError("Không tìm thấy comment này"), 404);
   let result = await like.filter((u) => u != req.user.id);
   if (JSON.stringify(result) === JSON.stringify(like)) result.push(req.user.id);
