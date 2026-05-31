@@ -11,7 +11,8 @@ const cookieParser = require("cookie-parser");
 const engine = require("ejs-mate");
 
 const AppError = require("./utils/appError");
-// const globalErrorHandler = require("./controllers/errorController");
+
+// ROUTES
 const productRouter = require("./routes/productRoutes");
 const userRouter = require("./routes/userRoutes");
 const categoryRouter = require("./routes/categoryRoutes");
@@ -27,70 +28,75 @@ const chatRouter = require("./routes/chatRoutes");
 const productApi = require("./routes/apiProduct");
 
 const app = express();
+
+// ================= VIEW ENGINE =================
 app.engine("ejs", engine);
 app.set("view engine", "ejs");
-// Add headers before the routes are defined
+
+// ================= CORS =================
 app.use(
   cors({
     origin: ["http://localhost:5173", "http://127.0.0.1:5173"],
-    methods: ["POST", "GET", "PUT", "PATCH", "DELETE"],
+    methods: ["GET", "POST", "PUT", "PATCH", "DELETE"],
     credentials: true,
   })
 );
-// Serving static files
-// app.use(express.static(path.join(__dirname, "public")));
+
+// ================= STATIC FILES =================
 app.use(
   "/bootstrap",
-  express.static(__dirname + "/node_modules/bootstrap/dist/")
+  express.static(path.join(__dirname, "node_modules/bootstrap/dist"))
 );
-app.use("/text", express.static(__dirname + "/node_modules/tinymce/"));
-// 1) GLOBAL MIDDLEWARE
-// Set security HTTP headers
+
+app.use(
+  "/text",
+  express.static(path.join(__dirname, "node_modules/tinymce"))
+);
+
+app.use(express.static(path.join(__dirname, "public")));
+app.use(express.static(path.join(__dirname, "views")));
+
+// ================= GLOBAL MIDDLEWARE =================
+
 // app.use(helmet());
+
 app.use(cookieParser());
 
-// Development logging
 if (process.env.NODE_ENV === "development") {
   app.use(morgan("dev"));
 }
 
-// Limit requests from same API
+// Rate limit
 const limiter = rateLimit({
   max: 1000,
   windowMs: 60 * 60 * 1000,
   message: "Too many requests from this IP, please try again in an hour!",
 });
+
 app.use("/api", limiter);
 
-// Body parser, reading data from body into req.body
+// Body parser
 app.use(express.json({ limit: "100kb" }));
 app.use(express.urlencoded({ extended: false }));
 
-// Data sanitization against NoSQL query injection
+// Security
 app.use(mongoSanitize());
-
-// Data sanitization against XSS
 app.use(xss());
 
-// Prevent parameter pollution
 app.use(
   hpp({
     whitelist: ["ratingsQuantity", "ratingsAverage", "price"],
   })
 );
 
-// Serving static files
-app.use(express.static(`${__dirname}/views`));
-app.use(express.static(`${__dirname}/public`));
-
 // Test middleware
 app.use((req, res, next) => {
   req.requestTime = new Date().toISOString();
-  // console.log(req.headers);
   next();
 });
 
-// 3) ROUTES
+// ================= ROUTES =================
+
 app.use("/api/v1/users", userRouter);
 app.use("/api/v1/products", productRouter);
 app.use("/api/v1/categories", categoryRouter);
@@ -102,15 +108,21 @@ app.use("/api/v1/comments", commentRouter);
 app.use("/api/v1/payments", transactionRouter);
 app.use("/api/v1/locations", locationRouter);
 app.use("/api/v1/chat", chatRouter);
+
 app.use("/api", productApi);
+
 app.use("/", viewRouter);
 
+// ================= 404 HANDLER =================
+
 app.all("*", (req, res, next) => {
-  // next(new AppError(`Can't find ${req.originalUrl} on this server!`, 404));
-  res.status(200).render("404");
+  return res.status(404).render("404");
 });
 
+// ================= GLOBAL ERROR HANDLER =================
+
 app.use((err, req, res, next) => {
+
   console.error("========== ERROR DETAIL ==========");
   console.error(err);
   console.error("message:", err?.message);
