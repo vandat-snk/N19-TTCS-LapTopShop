@@ -6,7 +6,7 @@ import Pagination from "react-js-pagination";
 import ModalAdvanced from "../../components/Modal/ModalAdvanced";
 import { formatPrice } from "../../utils/formatPrice";
 import { disableBodyScroll, enableBodyScroll } from "body-scroll-lock";
-import { calculateScore, generateRealLifeSuggestion, getStorageValue, getCpuScore, getGpuScore, getScreenScore } from "../../utils/calculateScore";
+import { calculateScore, generateRealLifeSuggestion, getStorageValue, getCpuScore, getGpuScore, getScreenScore, MAX_RECOMMENDATION_SCORE } from "../../utils/calculateScore";
 
 const ProductList = ({ data, handlePageClick, page, totalPage }) => {
   const navigate = useNavigate();
@@ -164,17 +164,23 @@ const ProductList = ({ data, handlePageClick, page, totalPage }) => {
                     <td className="text-base font-semibold text-blue-600">Điểm đánh giá (Gợi ý)</td>
                     <td>
                       <span className="text-xl text-yellow-400">
-                        {"★".repeat(calculateScore(selectedItems[0]))}
+                        {"★".repeat(calculateScore(selectedItems[0], selectedItems[1]))}
+                        <span className="text-gray-300">
+                          {"★".repeat(MAX_RECOMMENDATION_SCORE - calculateScore(selectedItems[0], selectedItems[1]))}
+                        </span>
                         <span className="text-gray-400 text-sm ml-1">
-                          ({calculateScore(selectedItems[0])}/10)
+                          ({calculateScore(selectedItems[0], selectedItems[1])}/10)
                         </span>
                       </span>
                     </td>
                     <td>
                       <span className="text-xl text-yellow-400">
-                        {"★".repeat(calculateScore(selectedItems[1]))}
+                        {"★".repeat(calculateScore(selectedItems[1], selectedItems[0]))}
+                        <span className="text-gray-300">
+                          {"★".repeat(MAX_RECOMMENDATION_SCORE - calculateScore(selectedItems[1], selectedItems[0]))}
+                        </span>
                         <span className="text-gray-400 text-sm ml-1">
-                          ({calculateScore(selectedItems[1])}/10)
+                          ({calculateScore(selectedItems[1], selectedItems[0])}/10)
                         </span>
                       </span>
                     </td>
@@ -221,72 +227,72 @@ const ProductList = ({ data, handlePageClick, page, totalPage }) => {
                   </tr>
                   <tr>
                     <td className="text-base font-semibold">CPU</td>
-                  <td>
-                    <span className="text-base font-normal flex items-center gap-x-2">
-                      {selectedItems[0]?.specs?.cpu}
-                      {getCpuScore((selectedItems[0]?.specs?.cpu || "").toLowerCase()) - getCpuScore((selectedItems[1]?.specs?.cpu || "").toLowerCase()) >= 0 && (
-                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="green" className="w-10 h-10">
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                        </svg>
-                      )}
-                    </span>
-                  </td>
-                  <td>
-                    <span className="text-base font-normal flex items-center gap-x-2">
-                      {selectedItems[1]?.specs?.cpu}
-                      {getCpuScore((selectedItems[1]?.specs?.cpu || "").toLowerCase()) - getCpuScore((selectedItems[0]?.specs?.cpu || "").toLowerCase()) >= 0 && (
-                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="green" className="w-10 h-10">
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                        </svg>
-                      )}
-                    </span>
-                  </td>
+                    <td>
+                      <span className="text-base font-normal flex items-center gap-x-2">
+                        {selectedItems[0]?.specs?.cpu}
+                        {getCpuScore((selectedItems[0]?.specs?.cpu || "").toLowerCase()) - getCpuScore((selectedItems[1]?.specs?.cpu || "").toLowerCase()) > 0 && (
+                          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="green" className="w-10 h-10">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                          </svg>
+                        )}
+                      </span>
+                    </td>
+                    <td>
+                      <span className="text-base font-normal flex items-center gap-x-2">
+                        {selectedItems[1]?.specs?.cpu}
+                        {getCpuScore((selectedItems[1]?.specs?.cpu || "").toLowerCase()) - getCpuScore((selectedItems[0]?.specs?.cpu || "").toLowerCase()) > 0 && (
+                          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="green" className="w-10 h-10">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                          </svg>
+                        )}
+                      </span>
+                    </td>
                   </tr>
                   <tr>
                     <td className="text-base font-semibold">Màn hình</td>
-                  <td>
-                    <span className="text-base font-normal flex items-center gap-x-2">
-                      {selectedItems[0]?.specs?.screen}
-                      {getScreenScore((selectedItems[0]?.specs?.screen || "").toLowerCase()) - getScreenScore((selectedItems[1]?.specs?.screen || "").toLowerCase()) >= 0 && (
-                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="green" className="w-10 h-10">
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                        </svg>
-                      )}
-                    </span>
-                  </td>
-                  <td>
-                    <span className="text-base font-normal flex items-center gap-x-2">
-                      {selectedItems[1]?.specs?.screen}
-                      {getScreenScore((selectedItems[1]?.specs?.screen || "").toLowerCase()) - getScreenScore((selectedItems[0]?.specs?.screen || "").toLowerCase()) >= 0 && (
-                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="green" className="w-10 h-10">
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                        </svg>
-                      )}
-                    </span>
-                  </td>
+                    <td>
+                      <span className="text-base font-normal flex items-center gap-x-2">
+                        {selectedItems[0]?.specs?.screen}
+                        {getScreenScore((selectedItems[0]?.specs?.screen || "").toLowerCase()) - getScreenScore((selectedItems[1]?.specs?.screen || "").toLowerCase()) > 0 && (
+                          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="green" className="w-10 h-10">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                          </svg>
+                        )}
+                      </span>
+                    </td>
+                    <td>
+                      <span className="text-base font-normal flex items-center gap-x-2">
+                        {selectedItems[1]?.specs?.screen}
+                        {getScreenScore((selectedItems[1]?.specs?.screen || "").toLowerCase()) - getScreenScore((selectedItems[0]?.specs?.screen || "").toLowerCase()) > 0 && (
+                          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="green" className="w-10 h-10">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                          </svg>
+                        )}
+                      </span>
+                    </td>
                   </tr>
                   <tr>
                     <td className="text-base font-semibold">Graphic Card</td>
-                  <td>
-                    <span className="text-base font-normal flex items-center gap-x-2">
-                      {selectedItems[0]?.specs?.graphicCard}
-                      {getGpuScore((selectedItems[0]?.specs?.graphicCard || "").toLowerCase()) - getGpuScore((selectedItems[1]?.specs?.graphicCard || "").toLowerCase()) >= 0 && (
-                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="green" className="w-10 h-10">
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                        </svg>
-                      )}
-                    </span>
-                  </td>
-                  <td>
-                    <span className="text-base font-normal flex items-center gap-x-2">
-                      {selectedItems[1]?.specs?.graphicCard}
-                      {getGpuScore((selectedItems[1]?.specs?.graphicCard || "").toLowerCase()) - getGpuScore((selectedItems[0]?.specs?.graphicCard || "").toLowerCase()) >= 0 && (
-                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="green" className="w-10 h-10">
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                        </svg>
-                      )}
-                    </span>
-                  </td>
+                    <td>
+                      <span className="text-base font-normal flex items-center gap-x-2">
+                        {selectedItems[0]?.specs?.graphicCard}
+                        {getGpuScore((selectedItems[0]?.specs?.graphicCard || "").toLowerCase()) - getGpuScore((selectedItems[1]?.specs?.graphicCard || "").toLowerCase()) > 0 && (
+                          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="green" className="w-10 h-10">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                          </svg>
+                        )}
+                      </span>
+                    </td>
+                    <td>
+                      <span className="text-base font-normal flex items-center gap-x-2">
+                        {selectedItems[1]?.specs?.graphicCard}
+                        {getGpuScore((selectedItems[1]?.specs?.graphicCard || "").toLowerCase()) - getGpuScore((selectedItems[0]?.specs?.graphicCard || "").toLowerCase()) > 0 && (
+                          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="green" className="w-10 h-10">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                          </svg>
+                        )}
+                      </span>
+                    </td>
                   </tr>
                   <tr>
                     <td className="text-base font-semibold">Pin</td>
@@ -320,7 +326,7 @@ const ProductList = ({ data, handlePageClick, page, totalPage }) => {
                       <span className="text-base font-normal flex items-center gap-x-2">
                         {selectedItems[0]?.specs?.ram}
                         {parseFloat(selectedItems[0]?.specs?.ram) -
-                          parseFloat(selectedItems[1]?.specs?.ram) >=
+                          parseFloat(selectedItems[1]?.specs?.ram) >
                           0 && (
                             <svg
                               xmlns="http://www.w3.org/2000/svg"
@@ -343,7 +349,7 @@ const ProductList = ({ data, handlePageClick, page, totalPage }) => {
                       <span className="text-base font-normal flex items-center gap-x-2">
                         {selectedItems[1]?.specs?.ram}
                         {parseFloat(selectedItems[1]?.specs?.ram) -
-                          parseFloat(selectedItems[0]?.specs?.ram) >=
+                          parseFloat(selectedItems[0]?.specs?.ram) >
                           0 && (
                             <svg
                               xmlns="http://www.w3.org/2000/svg"
@@ -369,7 +375,7 @@ const ProductList = ({ data, handlePageClick, page, totalPage }) => {
                       <span className="text-base font-normal flex items-center gap-x-2">
                         {selectedItems[0]?.specs?.storage}
                         {getStorageValue(selectedItems[0]?.specs?.storage) -
-                          getStorageValue(selectedItems[1]?.specs?.storage) >=
+                          getStorageValue(selectedItems[1]?.specs?.storage) >
                           0 && (
                             <svg
                               xmlns="http://www.w3.org/2000/svg"
@@ -392,7 +398,7 @@ const ProductList = ({ data, handlePageClick, page, totalPage }) => {
                       <span className="text-base font-normal flex items-center gap-x-2">
                         {selectedItems[1]?.specs?.storage}
                         {getStorageValue(selectedItems[1]?.specs?.storage) -
-                          getStorageValue(selectedItems[0]?.specs?.storage) >=
+                          getStorageValue(selectedItems[0]?.specs?.storage) >
                           0 && (
                             <svg
                               xmlns="http://www.w3.org/2000/svg"
@@ -417,7 +423,7 @@ const ProductList = ({ data, handlePageClick, page, totalPage }) => {
                     <td>
                       <span className="text-base font-normal flex items-center gap-x-2">
                         {selectedItems[0]?.specs?.weight}
-                        {parseFloat(selectedItems[0]?.specs?.weight) - parseFloat(selectedItems[1]?.specs?.weight) <=
+                        {parseFloat(selectedItems[0]?.specs?.weight) - parseFloat(selectedItems[1]?.specs?.weight) <
                           0 && (
                             <svg
                               xmlns="http://www.w3.org/2000/svg"
@@ -439,7 +445,7 @@ const ProductList = ({ data, handlePageClick, page, totalPage }) => {
                     <td>
                       <span className="text-base font-normal flex items-center gap-x-2">
                         {selectedItems[1]?.specs?.weight}
-                        {parseFloat(selectedItems[1]?.specs?.weight) - parseFloat(selectedItems[0]?.specs?.weight) <=
+                        {parseFloat(selectedItems[1]?.specs?.weight) - parseFloat(selectedItems[0]?.specs?.weight) <
                           0 && (
                             <svg
                               xmlns="http://www.w3.org/2000/svg"
@@ -462,55 +468,19 @@ const ProductList = ({ data, handlePageClick, page, totalPage }) => {
                   <tr>
                     <td className="text-base font-semibold">Giá tiền</td>
                     <td>
-                      <span className="text-base font-normal flex items-center gap-x-2 text-blue-700 font-bold">
+                      <span className="text-base font-normal text-blue-700 font-bold">
                         {formatPrice(selectedItems[0]?.promotion)}
-                        {selectedItems[0]?.promotion -
-                          selectedItems[1]?.promotion <=
-                          0 && (
-                            <svg
-                              xmlns="http://www.w3.org/2000/svg"
-                              fill="none"
-                              viewBox="0 0 24 24"
-                              strokeWidth="1.5"
-                              stroke="green"
-                              className="w-10 h-10"
-                            >
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                              />
-                            </svg>
-                          )}
                       </span>
                     </td>
                     <td>
-                      <span className="text-base font-normal flex items-center gap-x-2 text-blue-700 font-bold">
+                      <span className="text-base font-normal text-blue-700 font-bold">
                         {formatPrice(selectedItems[1]?.promotion)}
-                        {selectedItems[1]?.promotion -
-                          selectedItems[0]?.promotion <=
-                          0 && (
-                            <svg
-                              xmlns="http://www.w3.org/2000/svg"
-                              fill="none"
-                              viewBox="0 0 24 24"
-                              strokeWidth="1.5"
-                              stroke="green"
-                              className="w-10 h-10"
-                            >
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                              />
-                            </svg>
-                          )}
                       </span>
                     </td>
                   </tr>
                 </tbody>
               </table>
-              
+
               {selectedItems.length === 2 && (
                 <div className="mt-5 border-t pt-5 pb-5">
                   <h3 className="text-lg font-bold text-green-600 mb-2 flex items-center gap-2">
