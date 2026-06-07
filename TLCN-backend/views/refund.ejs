@@ -1,0 +1,112 @@
+<% layout('base') -%>
+
+<div class="container-fluid py-4">
+
+  <!-- HEADER -->
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h4 class="fw-bold mb-0" style="color:#d63384;">
+      <i class="fa-solid fa-rotate-left me-2"></i>Quản lý Hoàn tiền
+    </h4>
+    <span id="pending-count" class="badge bg-danger fs-6"></span>
+  </div>
+
+  <!-- TABS -->
+  <ul class="nav nav-tabs mb-3" id="refundTab">
+    <li class="nav-item">
+      <a class="nav-link active" data-filter="pending" href="#">
+        <i class="fa-solid fa-clock me-1"></i>Chờ xử lý
+      </a>
+    </li>
+    <li class="nav-item">
+      <a class="nav-link" data-filter="success" href="#">
+        <i class="fa-solid fa-check-circle me-1"></i>Đã hoàn tiền
+      </a>
+    </li>
+    <li class="nav-item">
+      <a class="nav-link" data-filter="failed" href="#">
+        <i class="fa-solid fa-xmark-circle me-1"></i>Thất bại
+      </a>
+    </li>
+    <li class="nav-item">
+      <a class="nav-link" data-filter="all" href="#">
+        <i class="fa-solid fa-list me-1"></i>Tất cả
+      </a>
+    </li>
+  </ul>
+
+  <!-- TABLE -->
+  <div class="card shadow-sm border-0" style="border-radius:14px; overflow:hidden;">
+    <div class="card-body p-0">
+      <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0" id="refund-table">
+          <thead style="background:#fff0f6;">
+            <tr>
+              <th class="ps-4">Khách hàng</th>
+              <th>Mã đơn hàng</th>
+              <th>Số tiền hoàn</th>
+              <th>Phương thức</th>
+              <th>Mã giao dịch gốc</th>
+              <th>Ngày tạo</th>
+              <th>Trạng thái</th>
+              <th class="text-center pe-4">Hành động</th>
+            </tr>
+          </thead>
+          <tbody id="refund-tbody">
+            <tr>
+              <td colspan="8" class="text-center py-5 text-muted">
+                <div class="spinner-border spinner-border-sm me-2"></div>Đang tải...
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- MODAL XÁC NHẬN HOÀN TIỀN -->
+<div class="modal fade" id="confirmRefundModal" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content" style="border-radius:14px;">
+      <div class="modal-header border-0 pb-0">
+        <h5 class="modal-title fw-bold" style="color:#0070ba;">
+          <i class="fa-brands fa-paypal me-2"></i>Hoàn tiền qua PayPal
+        </h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <div class="alert alert-info">
+          <i class="fa-solid fa-circle-info me-1"></i>
+          Hệ thống sẽ <strong>tự động gọi PayPal API</strong> để hoàn tiền về tài khoản khách hàng ngay lập tức.
+        </div>
+        <table class="table table-sm table-bordered mb-3">
+          <tr><th>Khách hàng</th><td id="modal-user"></td></tr>
+          <tr><th>Số tiền hoàn</th><td id="modal-amount" class="text-danger fw-bold"></td></tr>
+          <tr><th>Mã đơn hàng</th><td id="modal-order" class="text-muted small"></td></tr>
+          <tr><th>Mã giao dịch</th><td id="modal-code" class="text-muted small"></td></tr>
+        </table>
+        <div class="mb-2">
+          <label class="form-label fw-semibold">Ghi chú (tuỳ chọn)</label>
+          <textarea id="refund-note" class="form-control" rows="2" placeholder="Ghi chú nội bộ..."></textarea>
+        </div>
+      </div>
+      <div class="modal-footer border-0 pt-0">
+        <button class="btn btn-light" data-bs-dismiss="modal">Huỷ</button>
+        <button class="btn btn-primary" id="btn-confirm-refund" onclick="doRefund()" style="background:#0070ba; border-color:#0070ba;">
+          <i class="fa-brands fa-paypal me-1"></i>Xác nhận hoàn tiền PayPal
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+  .nav-tabs .nav-link { color: #666; border-radius: 8px 8px 0 0; }
+  .nav-tabs .nav-link.active { color: #d63384; border-bottom-color: #fff; font-weight: 600; }
+  .badge-status-pending { background:#fff3cd; color:#856404; border-radius:6px; padding:3px 10px; font-size:.8rem; }
+  .badge-status-success { background:#d1e7dd; color:#0a5c36; border-radius:6px; padding:3px 10px; font-size:.8rem; }
+  .badge-status-failed  { background:#f8d7da; color:#842029; border-radius:6px; padding:3px 10px; font-size:.8rem; }
+</style>
+
+<script src="/js/refund.js"></script>

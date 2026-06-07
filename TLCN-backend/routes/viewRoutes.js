@@ -70,6 +70,9 @@ router.get("/orders/:id", async (req, res, next) => {
     res.status(200).render("404");
   }
 });
+router.get("/refunds", (req, res, next) => {
+  res.status(200).render("refund", { title: "Manage Refunds" });
+});
 router.get("/imports", (req, res, next) => {
   res.status(200).render("import",{title:"Manage Import"});
 });

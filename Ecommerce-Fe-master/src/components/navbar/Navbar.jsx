@@ -13,6 +13,7 @@ import CartHollow from "../cart/CartHollow";
 import Search from "../search/Search";
 import useClickOutSide from "../../hooks/useClickOutSide";
 import useDebounce from "../../hooks/useDebounce";
+import NotificationBell from "../notification/NotificationBell";
 
 const Navbar = () => {
   const loggedInUser = useSelector((state) => state.user.current);
@@ -202,6 +203,7 @@ const Navbar = () => {
         ) : (
           <Profile data={loggedInUser} />
         )}
+        {isLoggedIn && <NotificationBell />}
         <div
           className="relative flex items-center gap-x-3 cart-home cursor-pointer"
           onMouseOver={hanleMouseOver}

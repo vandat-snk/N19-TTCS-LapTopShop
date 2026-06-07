@@ -57,6 +57,10 @@ axiosClient.interceptors.response.use(
       "/api/v1/products/:id/comments?query",
       "/api/v1/comments/:id",
       "/api/v1/comments/setLike/:id",
+      "/api/v1/notifications",
+      "/api/v1/notifications/read-all",
+      "/api/v1/notifications/:id/read",
+      "/api/v1/notifications/:id",
     ];
     if (
       (URLs.includes(config.url) && status === 500) ||

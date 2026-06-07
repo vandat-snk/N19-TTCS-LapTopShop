@@ -36,6 +36,10 @@ const transactionSchema = new mongoose.Schema(
       enum: ["pending", "success", "failed"],
       default: "pending",
     },
+    note: {
+      type: String,
+      default: "",
+    },
     invoicePayment: Object,
   },
   {

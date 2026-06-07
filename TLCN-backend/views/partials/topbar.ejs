@@ -17,6 +17,44 @@
         <i class="fas fa-location-arrow fa-fw"></i>
       </a>
     </div>
+    <!-- Notification Bell -->
+    <div class="nav-item dropdown no-arrow mx-1" id="notif-dropdown-wrapper">
+      <a class="nav-link" href="#" id="notifBell" role="button">
+        <span style="position:relative;display:inline-block;">
+          <i class="fas fa-bell fa-fw" style="font-size:1.15rem;color:#5a5c69;"></i>
+          <span id="notifBadge" style="
+            display:none;
+            position:absolute;
+            top:-6px;right:-8px;
+            background:#e74a3b;color:#fff;
+            border-radius:50%;min-width:16px;height:16px;
+            font-size:10px;font-weight:700;
+            text-align:center;line-height:16px;padding:0 3px;
+          ">0</span>
+        </span>
+      </a>
+      <!-- Dropdown panel -->
+      <div id="notifPanel" style="
+        display:none;position:absolute;right:0;top:calc(100% + 8px);
+        width:360px;background:#fff;border-radius:12px;
+        box-shadow:0 8px 32px rgba(0,0,0,.14);z-index:9999;
+        border:1px solid #e3e6f0;overflow:hidden;
+      ">
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 16px;background:#f8f9fc;border-bottom:1px solid #e3e6f0;">
+          <span style="font-weight:600;font-size:14px;color:#3a3b45;">
+            Thông báo <span id="notifUnreadLabel" style="color:#4e73df;"></span>
+          </span>
+          <button id="notifMarkAll" style="font-size:12px;color:#4e73df;background:none;border:none;cursor:pointer;font-weight:500;">
+            Đọc tất cả
+          </button>
+        </div>
+        <div id="notifList" style="max-height:380px;overflow-y:auto;"></div>
+        <div style="padding:10px;text-align:center;border-top:1px solid #e3e6f0;">
+          <a href="/orders" style="font-size:12px;color:#4e73df;font-weight:500;">Xem tất cả đơn hàng →</a>
+        </div>
+      </div>
+    </div>
+
     <div class="topbar-divider d-none d-sm-block"></div>
 
     <!-- Nav Item - User Information -->
@@ -50,8 +88,127 @@
 <!-- End of Topbar -->
 
 <script>
-  const socket = io("https://hctech.onrender.com");
-  socket.on("orders", (data) => {
-    showAlert("success", `New order from - ${data.user}. Please check!!!`);
+(function() {
+  const bell = document.getElementById('notifBell');
+  const panel = document.getElementById('notifPanel');
+  const badge = document.getElementById('notifBadge');
+  const list = document.getElementById('notifList');
+  const markAllBtn = document.getElementById('notifMarkAll');
+  const unreadLabel = document.getElementById('notifUnreadLabel');
+
+  let notifications = [];
+  let totalUnread = 0;
+  let panelOpen = false;
+
+  const typeIcons = {
+    new_order: '<span style="color:#4e73df">&#128722;</span>',
+    order_cancelled: '<span style="color:#e74a3b">&#10060;</span>',
+    refund_success: '<span style="color:#1cc88a">&#10004;</span>',
+  };
+
+  const timeAgo = (dateStr) => {
+    const diff = Date.now() - new Date(dateStr).getTime();
+    const mins = Math.floor(diff / 60000);
+    if (mins < 1) return 'Vừa xong';
+    if (mins < 60) return mins + ' phút trước';
+    const hrs = Math.floor(mins / 60);
+    if (hrs < 24) return hrs + ' giờ trước';
+    return Math.floor(hrs / 24) + ' ngày trước';
+  };
+
+  const renderList = () => {
+    if (notifications.length === 0) {
+      list.innerHTML = '<div style="padding:40px;text-align:center;color:#aaa;font-size:13px;">Không có thông báo nào</div>';
+      return;
+    }
+    list.innerHTML = notifications.map(n => `
+      <div onclick="window._notifClick('${n._id}','${n.orderId||''}')"
+        style="display:flex;align-items:flex-start;gap:10px;padding:12px 16px;cursor:pointer;
+               background:${n.isRead?'#fff':'#eef2ff'};border-bottom:1px solid #f1f1f1;
+               transition:background .15s;" 
+        onmouseover="this.style.background='#f8f9fc'" 
+        onmouseout="this.style.background='${n.isRead?'#fff':'#eef2ff'}'"
+      >
+        <div style="width:32px;height:32px;border-radius:50%;background:#f0f0f0;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:16px;">
+          ${typeIcons[n.type]||typeIcons.new_order}
+        </div>
+        <div style="flex:1;min-width:0;">
+          <div style="font-size:13px;font-weight:${n.isRead?500:700};color:#333;line-height:1.4;">${n.title}</div>
+          <div style="font-size:12px;color:#666;margin-top:2px;line-height:1.4;">${n.message}</div>
+          <div style="font-size:11px;color:#aaa;margin-top:4px;">${timeAgo(n.createdAt)}</div>
+        </div>
+        <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;flex-shrink:0;">
+          ${!n.isRead ? '<span style="width:8px;height:8px;background:#4e73df;border-radius:50%;margin-top:4px;"></span>' : ''}
+          <button onclick="event.stopPropagation();window._notifDelete('${n._id}')" 
+            style="background:none;border:none;cursor:pointer;color:#ccc;font-size:12px;padding:0;"
+            title="Xóa">&#128465;</button>
+        </div>
+      </div>
+    `).join('');
+  };
+
+  const updateBadge = () => {
+    if (totalUnread > 0) {
+      badge.style.display = 'inline-block';
+      badge.textContent = totalUnread > 99 ? '99+' : totalUnread;
+      unreadLabel.textContent = '(' + totalUnread + ' chưa đọc)';
+    } else {
+      badge.style.display = 'none';
+      unreadLabel.textContent = '';
+    }
+  };
+
+  const fetchNotifications = async () => {
+    try {
+      const res = await fetch('/api/v1/notifications?limit=20', { credentials: 'include' });
+      if (!res.ok) return;
+      const data = await res.json();
+      notifications = data.data?.data || [];
+      totalUnread = data.totalUnread || 0;
+      updateBadge();
+      if (panelOpen) renderList();
+    } catch(e) { /* silent */ }
+  };
+
+  window._notifClick = async (id, orderId) => {
+    try { await fetch('/api/v1/notifications/' + id + '/read', { method:'PATCH', credentials:'include' }); } catch(e){}
+    const n = notifications.find(x => x._id === id);
+    if (n && !n.isRead) { n.isRead = true; totalUnread = Math.max(0, totalUnread-1); updateBadge(); renderList(); }
+    if (orderId) window.location.href = '/orders/' + orderId;
+    else window.location.href = '/orders';
+  };
+
+  window._notifDelete = async (id) => {
+    try { await fetch('/api/v1/notifications/' + id, { method:'DELETE', credentials:'include' }); } catch(e){}
+    const n = notifications.find(x => x._id === id);
+    if (n && !n.isRead) totalUnread = Math.max(0, totalUnread-1);
+    notifications = notifications.filter(x => x._id !== id);
+    updateBadge(); renderList();
+  };
+
+  markAllBtn.addEventListener('click', async (e) => {
+    e.stopPropagation();
+    try { await fetch('/api/v1/notifications/read-all', { method:'PATCH', credentials:'include' }); } catch(e){}
+    notifications.forEach(n => n.isRead = true);
+    totalUnread = 0;
+    updateBadge(); renderList();
   });
+
+  bell.addEventListener('click', (e) => {
+    e.preventDefault(); e.stopPropagation();
+    panelOpen = !panelOpen;
+    panel.style.display = panelOpen ? 'block' : 'none';
+    if (panelOpen) renderList();
+  });
+
+  document.addEventListener('click', (e) => {
+    if (!document.getElementById('notif-dropdown-wrapper').contains(e.target)) {
+      panelOpen = false; panel.style.display = 'none';
+    }
+  });
+
+  // Fetch ngay và mỗi 30s
+  fetchNotifications();
+  setInterval(fetchNotifications, 30000);
+})();
 </script>

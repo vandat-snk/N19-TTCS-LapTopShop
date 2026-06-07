@@ -6,6 +6,7 @@ import productReducer from "./product/productSlice";
 import addressReducer from "../redux/auth/addressSlice";
 import orderReducer from "../redux/order/orderSlice";
 import commentReducer from "../redux/feedback/commentSlice";
+import notificationReducer from "../redux/notification/notificationSlice";
 
 const rootReducer = {
   user: userReducer,
@@ -15,6 +16,7 @@ const rootReducer = {
   product: productReducer,
   order: orderReducer,
   comment: commentReducer,
+  notification: notificationReducer,
 };
 
 const store = configureStore({

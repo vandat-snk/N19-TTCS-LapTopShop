@@ -25,6 +25,7 @@ const viewRouter = require("./routes/viewRoutes");
 const transactionRouter = require("./routes/transactionRoutes");
 const locationRouter = require("./routes/locationRoutes");
 const chatRouter = require("./routes/chatRoutes");
+const notificationRouter = require("./routes/notificationRoutes");
 const productApi = require("./routes/apiProduct");
 
 const app = express();
@@ -108,6 +109,7 @@ app.use("/api/v1/comments", commentRouter);
 app.use("/api/v1/payments", transactionRouter);
 app.use("/api/v1/locations", locationRouter);
 app.use("/api/v1/chat", chatRouter);
+app.use("/api/v1/notifications", notificationRouter);
 
 app.use("/api", productApi);
 

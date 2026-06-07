@@ -1,5 +1,5 @@
 tinymce.init({
-  selector: "textarea",
+  selector: "textarea:not(.no-tinymce)",  // [FIX] Bỏ qua các textarea có class no-tinymce
   theme: "silver",
   paste_data_images: true,
   plugins: ["advlist", "searchreplace", "insertdatetime", "emoticons", "image"],

@@ -7,6 +7,10 @@ const mailTemplate = require("./mailTemplate");
 const Product = require("../models/productModel");
 const sendEmail = require("../utils/email");
 const Transaction = require("../models/transactionModel");
+const {
+  createNotificationForAdmins,
+  createNotificationForUser,
+} = require("./notificationController");
 
 const getProductIdFromCartItem = (item) => {
   if (!item) return null;
@@ -99,13 +103,11 @@ exports.getCheckoutQuote = catchAsync(async (req, res, next) => {
 });
 
 exports.createOrder = catchAsync(async (req, res, next) => {
-  // 1. Lấy giỏ hàng từ Frontend gửi lên
   const incomingCart = req.body.cart;
   if (!incomingCart || incomingCart.length === 0) {
     return next(new AppError("Giỏ hàng trống!", 400));
   }
 
-  // 2. QUERY VÀO DATABASE ĐỂ CHỐT GIÁ (SNAPSHOT) - KHÔNG TIN TƯỞNG FRONTEND
   let calculatedTotalPrice = 0;
   const realCart = await Promise.all(
     incomingCart.map(async (item) => {
@@ -120,31 +122,25 @@ exports.createOrder = catchAsync(async (req, res, next) => {
         throw new AppError(`Không tìm thấy sản phẩm ID: ${item.product}`, 404);
       }
 
-      // LẤY GIÁ TỪ DATABASE: Ưu tiên giá promotion, nếu không có thì lấy price
       if (quantity > product.inventory) {
         const name =
           product.title.length > 39 ? product.title.slice(0, 40) : product.title;
         throw new AppError(`So luong hang ${name} trong kho khong du`, 400);
       }
 
-      const finalItemPrice = product.promotion
-        ? product.promotion
-        : product.price;
-
+      const finalItemPrice = product.promotion ? product.promotion : product.price;
       calculatedTotalPrice += finalItemPrice * quantity;
 
-      // Trả về Object để nhúng (Embed) vào đơn hàng
       return {
         product: product._id,
         title: product.title,
         image: product.images[0],
         quantity,
-        price: finalItemPrice, // Giá đã được chốt cứng tại Server
+        price: finalItemPrice,
       };
     })
   );
 
-  // 3. Xử lý giảm giá 15% cho đơn đầu tiên
   const orderHistoryCount = await Order.countDocuments({
     user: req.user.id,
     status: { $ne: "Cancelled" },
@@ -152,12 +148,9 @@ exports.createOrder = catchAsync(async (req, res, next) => {
 
   if (orderHistoryCount === 0) {
     calculatedTotalPrice = Math.round(calculatedTotalPrice * 0.85);
-    console.log(
-      `Đơn hàng đầu tiên của ${req.user.name}, đã áp dụng giảm giá 15%!`
-    );
+    console.log(`Đơn hàng đầu tiên của ${req.user.name}, đã áp dụng giảm giá 15%!`);
   }
 
-  // 4. Ghi đè dữ liệu an toàn vào req.body trước khi lưu
   req.body.cart = realCart;
   req.body.totalPrice = calculatedTotalPrice;
 
@@ -173,9 +166,7 @@ exports.createOrder = catchAsync(async (req, res, next) => {
   if (paymentMethod) {
     const invoicePayment =
       req.body.paymentInfo?.invoicePayment ||
-      (req.body.invoicePayment
-        ? JSON.stringify(req.body.invoicePayment)
-        : undefined);
+      (req.body.invoicePayment ? JSON.stringify(req.body.invoicePayment) : undefined);
 
     req.body.paymentInfo = {
       method: paymentMethod,
@@ -186,20 +177,51 @@ exports.createOrder = catchAsync(async (req, res, next) => {
     };
   }
 
-  // 5. Tạo đơn hàng
   const doc = await Order.create(req.body);
 
-  // 6. Trừ tồn kho sau khi tạo đơn hàng thành công
+  // [NOTIFICATION] Thông báo cho admin khi có đơn hàng mới
+  try {
+    const payMethod = req.body.paymentInfo?.method || "tiền mặt";
+    await createNotificationForAdmins({
+      type: "new_order",
+      title: "Đơn hàng mới cần xử lý",
+      message: `Khách hàng vừa đặt đơn hàng thanh toán bằng ${payMethod}. Vui lòng xử lý đơn hàng.`,
+      orderId: doc._id,
+    });
+  } catch (err) {
+    console.log("[Notification] Lỗi gửi thông báo đơn hàng mới:", err.message);
+  }
+
+  // [NOTIFICATION] Thông báo cho khách hàng khi đặt hàng
+  try {
+    const payMethod = req.body.paymentInfo?.method || "tiền mặt";
+    const isPaid = doc.paymentInfo?.status === "Paid";
+    if (isPaid) {
+      await createNotificationForUser({
+        userId: req.user.id,
+        type: "payment_success",
+        title: "Thanh toán thành công",
+        message: `Đơn hàng của bạn đã được đặt và thanh toán thành công qua ${payMethod}. Chúng tôi sẽ xử lý đơn hàng sớm nhất.`,
+        orderId: doc._id,
+      });
+    } else {
+      await createNotificationForUser({
+        userId: req.user.id,
+        type: "new_order",
+        title: "Đặt hàng thành công",
+        message: `Đơn hàng của bạn đã được đặt thành công. Vui lòng thanh toán khi nhận hàng.`,
+        orderId: doc._id,
+      });
+    }
+  } catch (err) {
+    console.log("[Notification] Lỗi gửi thông báo đặt hàng cho khách:", err.message, err.stack);
+  }
+
   await Product.bulkWrite(
     realCart.map((item) => ({
       updateOne: {
-        filter: {
-          _id: item.product,
-          inventory: { $gte: item.quantity },
-        },
-        update: {
-          $inc: { inventory: -item.quantity },
-        },
+        filter: { _id: item.product, inventory: { $gte: item.quantity } },
+        update: { $inc: { inventory: -item.quantity } },
       },
     }))
   );
@@ -232,15 +254,14 @@ exports.createOrder = catchAsync(async (req, res, next) => {
 
   res.status(201).json({
     status: "success",
-    data: {
-      data: populatedDoc,
-    },
+    data: { data: populatedDoc },
     id: doc._id,
     totalPrice: doc.totalPrice,
   });
 });
 
 exports.updateOrder = catchAsync(async (req, res, next) => {
+  // ─── Hoàn kho nếu hủy đơn ───────────────────────────────────────────────
   if (req.body.status == "Cancelled" && req.order.status !== "Cancelled") {
     const cart = req.order.cart;
     for (const value of cart) {
@@ -260,85 +281,136 @@ exports.updateOrder = catchAsync(async (req, res, next) => {
     return next(new AppError("Không tìm thấy dữ liệu với ID này", 404));
   }
 
-  // Bổ sung: chỉ gửi mail khi có cập nhật trạng thái đơn hàng
+  // ─── Lấy userId từ req.order (đã được populate bởi isOwner middleware) ──
+  // KHÔNG query lại Order để tránh vấn đề populate không nhất quán
+  const userId = req.order.user?._id || req.order.user;
+  console.log("[Notification] updateOrder - status:", req.body.status, "| userId:", userId, "| orderId:", doc._id);
+
+  // ─── Gửi email khi cập nhật trạng thái ───────────────────────────────────
   if (req.body.status) {
     try {
-      // Lấy lại đơn hàng đầy đủ user và product để template mail cũ đọc được
       const populatedOrder = await Order.findById(doc._id)
-        .populate({
-          path: "user",
-          select: "name email",
-        })
+        .populate({ path: "user", select: "name email" })
         .populate("cart.product");
 
       if (populatedOrder && populatedOrder.user && populatedOrder.user.email) {
-        // Chuyển sang object thường để bổ sung field address cho mailTemplate cũ
         const mailData = populatedOrder.toObject();
-
-        // mailTemplate cũ đang đọc data.address,
-        // còn Order mới đang lưu địa chỉ trong shippingDetails.address
         mailData.address =
-          mailData.address ||
-          mailData.shippingDetails?.address ||
-          "Chưa có địa chỉ";
-
-        // Đảm bảo cart có dữ liệu đúng cho template cũ
+          mailData.address || mailData.shippingDetails?.address || "Chưa có địa chỉ";
         mailData.cart = (mailData.cart || []).map((item) => {
           const product = item.product || {};
-
           return {
             ...item,
             product: {
               ...product,
               images: product.images || (item.image ? [item.image] : []),
               title: product.title || item.title || "Sản phẩm",
-              color:
-                product.color ||
-                product.specs?.color ||
-                item.color ||
-                "",
-              promotion:
-                product.promotion ||
-                item.price ||
-                product.price ||
-                0,
+              color: product.color || product.specs?.color || item.color || "",
+              promotion: product.promotion || item.price || product.price || 0,
             },
           };
         });
 
         const domain = process.env.CLIENT_URL || "http://localhost:5173";
         const message = mailTemplate(mailData, domain);
-
         await sendEmail({
           email: populatedOrder.user.email,
           subject: "Cập nhật trạng thái đơn hàng",
           message,
         });
-
-        console.log(
-          `Đã gửi email cập nhật trạng thái đơn hàng đến ${populatedOrder.user.email}`
-        );
-      } else {
-        console.log("Không gửi email vì đơn hàng không có email người dùng.");
+        console.log(`Đã gửi email cập nhật trạng thái đơn hàng đến ${populatedOrder.user.email}`);
       }
     } catch (err) {
       console.log("Lỗi gửi email cập nhật trạng thái đơn hàng:", err.message);
     }
   }
 
+  // ─── Thông báo khi HỦY đơn ───────────────────────────────────────────────
+  if (req.body.status === "Cancelled") {
+    // Thông báo admin nếu PayPal
+    try {
+      const payMethod = req.order.paymentInfo?.method;
+      if (payMethod === "paypal") {
+        const userName = req.order.user?.name || "Khách hàng";
+        await createNotificationForAdmins({
+          type: "order_cancelled",
+          title: "Đơn hàng bị hủy – Cần hoàn tiền PayPal",
+          message: `${userName} đã hủy đơn hàng đã thanh toán qua PayPal. Vui lòng xử lý hoàn tiền trong trang Quản lý Hoàn tiền.`,
+          orderId: doc._id,
+        });
+      }
+    } catch (err) {
+      console.log("[Notification] Lỗi gửi thông báo admin hủy đơn:", err.message);
+    }
+
+    // Thông báo khách hàng
+    try {
+      if (userId) {
+        await createNotificationForUser({
+          userId,
+          type: "order_cancelled",
+          title: "Đơn hàng đã bị hủy",
+          message: `Đơn hàng của bạn đã bị hủy. Nếu bạn đã thanh toán qua PayPal, chúng tôi sẽ hoàn tiền trong thời gian sớm nhất.`,
+          orderId: doc._id,
+        });
+        console.log("[Notification] ✓ Đã gửi thông báo hủy đơn cho user:", userId);
+      } else {
+        console.log("[Notification] WARN: Không tìm được userId để gửi thông báo hủy đơn");
+      }
+    } catch (err) {
+      console.log("[Notification] Lỗi gửi thông báo hủy đơn cho khách:", err.message, err.stack);
+    }
+  }
+
+  // ─── Thông báo khi đơn được XỬ LÝ (Processed) ───────────────────────────
+  if (req.body.status === "Processed") {
+    try {
+      if (userId) {
+        await createNotificationForUser({
+          userId,
+          type: "order_processed",
+          title: "Đơn hàng đang được xử lý",
+          message: `Đơn hàng của bạn đã được xác nhận và đang được chuẩn bị. Chúng tôi sẽ giao hàng sớm nhất có thể.`,
+          orderId: doc._id,
+        });
+        console.log("[Notification] ✓ Đã gửi thông báo Processed cho user:", userId);
+      }
+    } catch (err) {
+      console.log("[Notification] Lỗi gửi thông báo Processed:", err.message, err.stack);
+    }
+  }
+
+  // ─── Thông báo khi đơn GIAO THÀNH CÔNG (Success) ─────────────────────────
+  if (req.body.status === "Success") {
+    try {
+      if (userId) {
+        await createNotificationForUser({
+          userId,
+          type: "order_success",
+          title: "Đơn hàng đã giao thành công",
+          message: `Đơn hàng của bạn đã được giao thành công. Cảm ơn bạn đã mua sắm tại LapTopShop!`,
+          orderId: doc._id,
+        });
+        console.log("[Notification] ✓ Đã gửi thông báo Success cho user:", userId);
+      }
+    } catch (err) {
+      console.log("[Notification] Lỗi gửi thông báo Success:", err.message, err.stack);
+    }
+  }
+
   return res.status(200).json({
     status: "success",
-    data: {
-      data: doc,
-    },
+    data: { data: doc },
   });
 });
+
 exports.deleteOrder = factory.deleteOne(Order);
 exports.isOwner = factory.checkPermission(Order);
 exports.setUser = (req, res, next) => {
   if (!req.body.user) req.body.user = req.user;
   next();
 };
+
 exports.countStatus = catchAsync(async (req, res, next) => {
   const data = await Order.aggregate([
     { $group: { _id: "$status", count: { $sum: 1 } } },
@@ -347,23 +419,15 @@ exports.countStatus = catchAsync(async (req, res, next) => {
 });
 
 exports.countStatusOption = catchAsync(async (req, res, next) => {
-  const option = {
-    status: "$status",
-  };
+  const option = { status: "$status" };
   if (req.body.year) option.year = { $year: "$createdAt" };
   if (req.body.month) option.month = { $month: "$createdAt" };
   if (req.body.week) option.week = { $week: "$createdAt" };
   if (req.body.date) option.date = { $dayOfWeek: "$createdAt" };
-  const data = await Order.aggregate([
-    {
-      $group: {
-        _id: option,
-        count: { $sum: 1 },
-      },
-    },
-  ]);
+  const data = await Order.aggregate([{ $group: { _id: option, count: { $sum: 1 } } }]);
   res.status(200).json(data);
 });
+
 exports.sumRevenueOption = catchAsync(async (req, res, next) => {
   const option = {};
   if (req.body.year) option.year = { $year: "$createdAt" };
@@ -371,62 +435,35 @@ exports.sumRevenueOption = catchAsync(async (req, res, next) => {
   if (req.body.week) option.week = { $week: "$createdAt" };
   if (req.body.date) option.date = { $dayOfWeek: "$createdAt" };
   const data = await Order.aggregate([
-    {
-      $match: { status: "Success" },
-    },
-    {
-      $group: {
-        _id: option,
-        total_revenue: { $sum: "$totalPrice" },
-        // bookings_month: {
-        //   $push: {
-        //     each_order: "$totalPrice",
-        //   },
-        // },
-      },
-    },
+    { $match: { status: "Success" } },
+    { $group: { _id: option, total_revenue: { $sum: "$totalPrice" } } },
   ]);
   res.status(200).json(data);
 });
+
 exports.sumRevenue = catchAsync(async (req, res, next) => {
   const data = await Order.aggregate([
-    {
-      $match: { status: "Success" },
-    },
+    { $match: { status: "Success" } },
     {
       $group: {
-        _id: {
-          year: { $year: "$createdAt" },
-          month: { $month: "$createdAt" },
-        },
+        _id: { year: { $year: "$createdAt" }, month: { $month: "$createdAt" } },
         total_revenue_month: { $sum: "$totalPrice" },
-        // bookings_month: {
-        //   $push: {
-        //     each_order: "$totalPrice",
-        //   },
-        // },
       },
     },
   ]);
   res.status(200).json(data);
 });
-exports.topProduct = catchAsync(async (req, res, next) => {
-  const option = {
-    product: "$cart.product",
-  };
 
+exports.topProduct = catchAsync(async (req, res, next) => {
+  const option = { product: "$cart.product" };
   if (req.body.year) option.year = { $year: "$createdAt" };
   if (req.body.month) option.month = { $month: "$createdAt" };
   if (req.body.week) option.week = { $week: "$createdAt" };
   if (req.body.date) option.date = { $dayOfWeek: "$createdAt" };
 
   const data = await Order.aggregate([
-    {
-      $unwind: "$cart",
-    },
-    {
-      $match: { status: "Success" },
-    },
+    { $unwind: "$cart" },
+    { $match: { status: "Success" } },
     {
       $group: {
         _id: option,
@@ -443,43 +480,25 @@ exports.topProduct = catchAsync(async (req, res, next) => {
         as: "productInfo",
       },
     },
-    {
-      $addFields: {
-        productDoc: { $arrayElemAt: ["$productInfo", 0] },
-      },
-    },
+    { $addFields: { productDoc: { $arrayElemAt: ["$productInfo", 0] } } },
     {
       $addFields: {
         title: { $ifNull: ["$productDoc.title", "$title"] },
-        image: {
-          $ifNull: [
-            { $arrayElemAt: ["$productDoc.images", 0] },
-            "$image",
-          ],
-        },
+        image: { $ifNull: [{ $arrayElemAt: ["$productDoc.images", 0] }, "$image"] },
       },
     },
-    {
-      $project: {
-        productInfo: 0,
-        productDoc: 0,
-      },
-    },
+    { $project: { productInfo: 0, productDoc: 0 } },
     { $sort: { quantity: -1 } },
     { $limit: 5 },
   ]);
-
   res.status(200).json(data);
 });
 
 exports.countStatusInRange = catchAsync(async (req, res, next) => {
   const dateFrom = req.body.dateFrom;
   const dateTo = req.body.dateTo;
-  const option = {
-    status: "$status",
-  };
+  const option = { status: "$status" };
   let dateStart = new Date(dateFrom);
-  dateStart;
   let dateEnd = new Date(dateTo);
   dateStart.setUTCHours(0, 0, 0, 0);
   dateEnd.setUTCHours(23, 59, 59, 999);
@@ -492,34 +511,22 @@ exports.countStatusInRange = catchAsync(async (req, res, next) => {
         },
       },
     },
-    {
-      $group: {
-        _id: option,
-        count: { $sum: 1 },
-      },
-    },
+    { $group: { _id: option, count: { $sum: 1 } } },
   ]);
   res.status(200).json(data);
 });
 
 exports.topProductInRange = catchAsync(async (req, res, next) => {
-  const option = {
-    product: "$cart.product",
-  };
-
+  const option = { product: "$cart.product" };
   const dateFrom = req.body.dateFrom;
   const dateTo = req.body.dateTo;
-
   let dateStart = new Date(dateFrom);
   let dateEnd = new Date(dateTo);
-
   dateStart.setUTCHours(0, 0, 0, 0);
   dateEnd.setUTCHours(23, 59, 59, 999);
 
   const data = await Order.aggregate([
-    {
-      $unwind: "$cart",
-    },
+    { $unwind: "$cart" },
     {
       $match: {
         status: "Success",
@@ -545,32 +552,17 @@ exports.topProductInRange = catchAsync(async (req, res, next) => {
         as: "productInfo",
       },
     },
-    {
-      $addFields: {
-        productDoc: { $arrayElemAt: ["$productInfo", 0] },
-      },
-    },
+    { $addFields: { productDoc: { $arrayElemAt: ["$productInfo", 0] } } },
     {
       $addFields: {
         title: { $ifNull: ["$productDoc.title", "$title"] },
-        image: {
-          $ifNull: [
-            { $arrayElemAt: ["$productDoc.images", 0] },
-            "$image",
-          ],
-        },
+        image: { $ifNull: [{ $arrayElemAt: ["$productDoc.images", 0] }, "$image"] },
       },
     },
-    {
-      $project: {
-        productInfo: 0,
-        productDoc: 0,
-      },
-    },
+    { $project: { productInfo: 0, productDoc: 0 } },
     { $sort: { quantity: -1 } },
     { $limit: 5 },
   ]);
-
   res.status(200).json(data);
 });
 
@@ -578,7 +570,6 @@ exports.sumInRange = catchAsync(async (req, res, next) => {
   const dateFrom = req.body.dateFrom;
   const dateTo = req.body.dateTo;
   let dateStart = new Date(dateFrom);
-  dateStart;
   let dateEnd = new Date(dateTo);
   dateStart.setUTCHours(0, 0, 0, 0);
   dateEnd.setUTCHours(23, 59, 59, 999);
@@ -592,17 +583,7 @@ exports.sumInRange = catchAsync(async (req, res, next) => {
         },
       },
     },
-    {
-      $group: {
-        _id: null,
-        total_revenue: { $sum: "$totalPrice" },
-        // bookings_month: {
-        //   $push: {
-        //     each_order: "$totalPrice",
-        //   },
-        // },
-      },
-    },
+    { $group: { _id: null, total_revenue: { $sum: "$totalPrice" } } },
   ]);
   res.status(200).json(data);
 });
