@@ -333,6 +333,7 @@ exports.paypalRefundCallback = catchAsync(async (req, res, next) => {
 
 // ─── Xử lý hoàn tiền tự động qua PayPal (retry server-side) ─────────────
 exports.updateRefundStatus = catchAsync(async (req, res, next) => {
+  console.log("=== BẮT ĐẦU HOÀN TIỀN === transactionId:", req.params.id);
   const { note } = req.body;
 
   const transaction = await Transaction.findOne({
@@ -365,31 +366,66 @@ exports.updateRefundStatus = catchAsync(async (req, res, next) => {
     return next(new AppError("Không tìm thấy đơn hàng liên kết với giao dịch này", 404));
   }
 
-  if (!order.paymentInfo?.invoicePayment) {
-    return next(new AppError("Không tìm thấy thông tin thanh toán PayPal của đơn hàng", 400));
+  // ── Helper parse JSON an toàn, xử lý double-stringify ────────────────────
+  const safeParseInvoice = (raw) => {
+    if (!raw) return null;
+    try {
+      let parsed = typeof raw === "string" ? JSON.parse(raw) : raw;
+      // Xử lý double-stringify: nếu parse ra vẫn là string → parse lần nữa
+      if (typeof parsed === "string") parsed = JSON.parse(parsed);
+      return parsed;
+    } catch {
+      return null;
+    }
+  };
+
+  // ── Tìm captureId: thử nhiều nguồn theo thứ tự ──────────────────────────
+  let captureId = null;
+
+  // Nguồn 1: transaction.note lưu sẵn "captureId: XXXXX" khi tạo refund (orderModel)
+  if (transaction.note) {
+    const match = transaction.note.match(/captureId:\s*([A-Z0-9]+)/i);
+    if (match) captureId = match[1];
+    console.log("[Refund] captureId từ transaction.note:", captureId);
   }
 
-  let invoiceData;
-  try {
-    invoiceData =
-      typeof order.paymentInfo.invoicePayment === "string"
-        ? JSON.parse(order.paymentInfo.invoicePayment)
-        : order.paymentInfo.invoicePayment;
-  } catch (e) {
-    return next(new AppError("Dữ liệu invoicePayment không hợp lệ (không thể parse JSON)", 400));
+  // Nguồn 2: order.paymentInfo.invoicePayment
+  if (!captureId && order.paymentInfo?.invoicePayment) {
+    const invoiceData = safeParseInvoice(order.paymentInfo.invoicePayment);
+    if (invoiceData) {
+      captureId =
+        invoiceData?.purchase_units?.[0]?.payments?.captures?.[0]?.id || null;
+      console.log("[Refund] invoiceData keys:", JSON.stringify(Object.keys(invoiceData)));
+      console.log("[Refund] captureId từ order.invoicePayment:", captureId);
+    } else {
+      console.log("[Refund] Không parse được order.paymentInfo.invoicePayment");
+    }
   }
 
-  const captureId = invoiceData?.purchase_units?.[0]?.payments?.captures?.[0]?.id;
+  // Nguồn 3: transaction payment gốc cùng order (có invoicePayment đầy đủ)
+  if (!captureId) {
+    const paymentTx = await Transaction.findOne({
+      order: orderId,
+      type: "payment",
+      paymentMethod: "paypal",
+    }).lean();
+    if (paymentTx?.invoicePayment) {
+      const invoiceData = safeParseInvoice(paymentTx.invoicePayment);
+      captureId = invoiceData?.purchase_units?.[0]?.payments?.captures?.[0]?.id || null;
+      console.log("[Refund] captureId từ payment transaction:", captureId);
+    }
+  }
 
   if (!captureId) {
     return next(
       new AppError(
-        "Không tìm thấy captureId trong dữ liệu PayPal. Keys hiện có: " +
-          JSON.stringify(Object.keys(invoiceData || {})),
+        "Không tìm thấy captureId PayPal. Vui lòng kiểm tra log server để biết thêm chi tiết.",
         400
       )
     );
   }
+
+  console.log("[Refund] ✓ Sẽ hoàn tiền với captureId:", captureId);
 
   let paypalResult;
   try {

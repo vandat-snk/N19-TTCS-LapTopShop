@@ -8,42 +8,11 @@ const loadRefunds = async () => {
     allRefunds = res.data.data || [];
     updatePendingCount();
     renderTable(currentFilter);
-
-    // Xử lý query string sau khi PayPal callback
-    handlePaypalReturn();
   } catch (err) {
     $('#refund-tbody').html(
       '<tr><td colspan="8" class="text-center text-danger py-4">' +
       '<i class="fa-solid fa-circle-exclamation me-1"></i>Không thể tải dữ liệu hoàn tiền.</td></tr>'
     );
-  }
-};
-
-// ─── Đọc query string sau khi PayPal redirect về ─────────────────────────
-const handlePaypalReturn = () => {
-  const params = new URLSearchParams(window.location.search);
-
-  if (params.get('success') === '1') {
-    const refundId = params.get('refundId') || '';
-    showToast('success',
-      '✅ Hoàn tiền PayPal thành công!' + (refundId ? ' Mã: ' + refundId : '')
-    );
-    // Xoá query string khỏi URL mà không reload trang
-    window.history.replaceState({}, '', '/refunds');
-  } else if (params.get('cancelled') === '1') {
-    showToast('warning', '⚠️ Bạn đã huỷ xác nhận hoàn tiền trên PayPal.');
-    window.history.replaceState({}, '', '/refunds');
-  } else if (params.get('error')) {
-    const errMap = {
-      missing_token: 'Không nhận được mã xác nhận từ PayPal.',
-      not_found:     'Không tìm thấy giao dịch.',
-      capture_failed:'PayPal capture thất bại. Vui lòng thử lại.',
-    };
-    showToast('error', '❌ ' + (errMap[params.get('error')] || 'Đã xảy ra lỗi.'));
-    window.history.replaceState({}, '', '/refunds');
-  } else if (params.get('already') === '1') {
-    showToast('info', 'ℹ️ Giao dịch này đã được hoàn tiền thành công trước đó.');
-    window.history.replaceState({}, '', '/refunds');
   }
 };
 
@@ -114,8 +83,9 @@ const renderTable = (filter) => {
       const btnClass = r.status === 'pending' ? 'btn-danger' : 'btn-warning';
       const icon     = r.status === 'pending' ? 'fa-brands fa-paypal' : 'fa-solid fa-rotate-right';
       const label    = r.status === 'pending' ? 'Hoàn tiền PayPal' : 'Thử lại';
+      // ✅ Đổi từ openPaypalPopup → processRefund
       actionBtn =
-        '<button class="btn btn-sm ' + btnClass + '" onclick="openPaypalPopup(\'' + r._id + '\')">' +
+        '<button class="btn btn-sm ' + btnClass + '" onclick="processRefund(\'' + r._id + '\')">' +
         '<i class="' + icon + ' me-1"></i>' + label + '</button>';
     } else {
       actionBtn = '<span class="text-muted small">—</span>';
@@ -140,63 +110,44 @@ const renderTable = (filter) => {
   $('#refund-tbody').html(rows.join(''));
 };
 
-// ─── Mở popup PayPal thật sự ──────────────────────────────────────────────
-// Luồng: gọi API tạo PayPal Order → nhận approveUrl → window.open
-// → Admin đăng nhập PayPal và nhấn approve → PayPal redirect về backend callback
-// → Backend capture → redirect về /refund?success=1
-const openPaypalPopup = async (refundId) => {
+// ─── Hoàn tiền trực tiếp qua PayPal Refund API (KHÔNG cần popup) ─────────
+// Luồng: Admin bấm nút → gọi PATCH /refunds/:id/status
+// → Backend dùng captureId từ đơn hàng gốc → gọi PayPal Refund API
+// → Tiền tự động hoàn về tài khoản buyer, không cần đăng nhập PayPal thủ công
+const processRefund = async (refundId) => {
   const r = allRefunds.find(x => x._id === refundId);
   if (!r) return;
 
-  // Hiện loading overlay
+  const label = r.status === 'pending' ? 'hoàn tiền' : 'thử lại hoàn tiền';
+  const userName = r.user ? r.user.name : 'khách hàng này';
+  const amount = r.amount ? r.amount.toLocaleString('vi-VN') + ' VND' : '';
+
+  if (!confirm(`Xác nhận ${label} ${amount ? amount + ' ' : ''}cho ${userName}?`)) return;
+
   showLoadingOverlay(r);
 
   try {
-    // Gọi backend tạo PayPal Order, nhận approveUrl
     const res = await $.ajax({
-      url: '/api/v1/payments/refunds/' + refundId + '/create-paypal-order',
-      method: 'POST',
+      url: '/api/v1/payments/refunds/' + refundId,
+      method: 'PATCH',
       contentType: 'application/json',
+      data: JSON.stringify({ note: 'Admin xác nhận hoàn tiền' }),
     });
 
-    const approveUrl = res.data?.approveUrl;
-    if (!approveUrl) throw new Error('Không nhận được URL PayPal');
-
     hideLoadingOverlay();
-
-    // Mở popup cửa sổ PayPal giống hình khách hàng
-    const w = 500, h = 700;
-    const left = (window.screen.width  - w) / 2;
-    const top  = (window.screen.height - h) / 2;
-    const popup = window.open(
-      approveUrl,
-      'PayPal Hoàn Tiền',
-      `width=${w},height=${h},top=${top},left=${left},toolbar=no,menubar=no,scrollbars=yes,resizable=yes`
-    );
-
-    if (!popup || popup.closed || typeof popup.closed === 'undefined') {
-      // Trình duyệt chặn popup → mở tab mới
-      showToast('warning', '⚠️ Trình duyệt chặn popup. Đang mở tab mới...');
-      setTimeout(() => window.open(approveUrl, '_blank'), 500);
-      return;
-    }
-
-    // Poll kiểm tra popup đóng → reload bảng
-    const timer = setInterval(() => {
-      if (popup.closed) {
-        clearInterval(timer);
-        setTimeout(() => loadRefunds(), 1500); // chờ backend xử lý callback
-      }
-    }, 800);
+    const refundCode = res.data?.paypalRefundId || '';
+    showToast('success', '✅ Hoàn tiền thành công!' + (refundCode ? ' Mã PayPal: ' + refundCode : ''));
+    await loadRefunds();
 
   } catch (err) {
     hideLoadingOverlay();
-    const msg = err.responseJSON?.message || err.message || 'Không thể kết nối PayPal. Vui lòng thử lại.';
+    const msg = err.responseJSON?.message || err.message || 'Hoàn tiền thất bại. Vui lòng thử lại.';
     showToast('error', '❌ ' + msg);
+    await loadRefunds();
   }
 };
 
-// ─── Loading overlay ──────────────────────────────────────────────────────
+// ─── Loading overlay (giữ nguyên giao diện cũ) ───────────────────────────
 const showLoadingOverlay = (r) => {
   const amount = r.amount ? r.amount.toLocaleString('vi-VN') + ' VND' : '—';
   const userName = r.user ? r.user.name : 'N/A';
@@ -216,41 +167,41 @@ const showLoadingOverlay = (r) => {
     <div style="
       background:#fff; border-radius:16px; padding:36px 32px;
       text-align:center; width:340px; max-width:90vw;
-      box-shadow:0 16px 48px rgba(214,51,132,0.2);
+      box-shadow:0 16px 48px rgba(0,116,186,0.2);
       animation: popIn .25s cubic-bezier(.34,1.56,.64,1);
     ">
       <div style="
         width:64px; height:64px; border-radius:50%;
-        background:linear-gradient(135deg,#d63384,#ff6ab0);
+        background:linear-gradient(135deg,#003087,#009cde);
         display:flex; align-items:center; justify-content:center;
         margin:0 auto 16px;
-        box-shadow:0 4px 16px rgba(214,51,132,0.3);
+        box-shadow:0 4px 16px rgba(0,116,186,0.3);
       ">
         <i class="fa-brands fa-paypal" style="color:#fff; font-size:26px;"></i>
       </div>
       <div style="font-size:17px; font-weight:700; color:#1a1a2e; margin-bottom:6px;">
-        Đang mở cửa sổ PayPal...
+        Đang xử lý hoàn tiền...
       </div>
       <div style="font-size:13px; color:#888; margin-bottom:18px;">
-        Vui lòng đăng nhập và xác nhận hoàn tiền
+        Vui lòng chờ, không tắt trang này
       </div>
-      <div style="background:#fdf2f8; border-radius:10px; padding:12px 16px; text-align:left; margin-bottom:18px;">
+      <div style="background:#f0f7ff; border-radius:10px; padding:12px 16px; text-align:left; margin-bottom:18px;">
         <div style="display:flex; justify-content:space-between; font-size:13px; margin-bottom:6px;">
           <span style="color:#888;">Khách hàng</span>
           <span style="font-weight:600; color:#333;">${userName}</span>
         </div>
         <div style="display:flex; justify-content:space-between; font-size:14px;">
           <span style="color:#888;">Số tiền hoàn</span>
-          <span style="font-weight:700; color:#d63384;">${amount}</span>
+          <span style="font-weight:700; color:#003087;">${amount}</span>
         </div>
       </div>
       <div style="display:flex; align-items:center; justify-content:center; gap:8px; color:#888; font-size:13px;">
         <div style="
           width:18px; height:18px;
-          border:2.5px solid #e9d0e6; border-top-color:#d63384;
+          border:2.5px solid #cce4f7; border-top-color:#009cde;
           border-radius:50%; animation:spin .7s linear infinite;
         "></div>
-        Đang kết nối PayPal...
+        Đang gọi PayPal API...
       </div>
     </div>
     <style>

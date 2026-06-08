@@ -164,9 +164,24 @@ exports.createOrder = catchAsync(async (req, res, next) => {
 
   const paymentMethod = req.body.paymentInfo?.method || req.body.payments;
   if (paymentMethod) {
-    const invoicePayment =
-      req.body.paymentInfo?.invoicePayment ||
-      (req.body.invoicePayment ? JSON.stringify(req.body.invoicePayment) : undefined);
+    // Lấy invoicePayment từ bất kỳ nguồn nào, đảm bảo luôn lưu dạng JSON string 1 lần
+    const rawInvoice = req.body.paymentInfo?.invoicePayment ?? req.body.invoicePayment;
+    let invoicePayment;
+    if (rawInvoice === undefined || rawInvoice === null) {
+      invoicePayment = undefined;
+    } else if (typeof rawInvoice === "string") {
+      // Kiểm tra xem có bị stringify 2 lần không (string của string)
+      try {
+        const parsed = JSON.parse(rawInvoice);
+        // Nếu parse ra lại là string → bị double-stringify → parse lại 1 lần nữa
+        invoicePayment = typeof parsed === "string" ? parsed : rawInvoice;
+      } catch {
+        invoicePayment = rawInvoice;
+      }
+    } else {
+      // Object → stringify 1 lần
+      invoicePayment = JSON.stringify(rawInvoice);
+    }
 
     req.body.paymentInfo = {
       method: paymentMethod,
