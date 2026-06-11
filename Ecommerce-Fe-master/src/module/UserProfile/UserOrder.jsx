@@ -101,6 +101,16 @@ const UserOrder = () => {
 
           <button
             className={`flex items-center gap-x-3 cursor-pointer py-2 px-4 text-base font-medium rounded-lg border border-gray-300 ${
+              state === "Waiting Goods" ? "bg-blue-500 text-white" : ""
+            }`}
+            value="Waiting Goods"
+            onClick={handleClick}
+          >
+            Đợi lấy hàng
+          </button>
+
+          <button
+            className={`flex items-center gap-x-3 cursor-pointer py-2 px-4 text-base font-medium rounded-lg border border-gray-300 ${
               state === "Delivery" ? "bg-blue-500 text-white" : ""
             }`}
             value="Delivery"
@@ -321,6 +331,36 @@ const UserOrder = () => {
                         ))}
                     </>
                   )}
+                  {state === "Waiting Goods" && (
+                    <>
+                      {order?.length > 0 &&
+                        order.map((item) => (
+                          <tr className="text-base" key={item._id}>
+                            <td
+                              className="cursor-pointer text-blue-600 hover:text-blue-900"
+                              onClick={() =>
+                                navigate(`/account/orders/${item._id}`)
+                              }
+                              title={item._id}
+                            >
+                              {item._id.slice(0, 10)}
+                            </td>
+                            <td>
+                              {format(new Date(item?.createdAt), "HH:mm")}
+                              &nbsp;&nbsp;
+                              {format(new Date(item?.createdAt), "dd/MM/yyyy")}
+                            </td>
+                            <td>{getFirstProductTitle(item)}</td>
+                            <td>{formatPrice(item.totalPrice)}</td>
+                            <td>
+                              <span className="px-3 py-1 inline-block whitespace-nowrap rounded-lg text-white bg-yellow-400">
+                                Đợi lấy hàng
+                              </span>
+                            </td>
+                          </tr>
+                        ))}
+                    </>
+                  )}
                   {state === "Delivery" && (
                     <>
                       {order?.length > 0 &&
@@ -467,6 +507,18 @@ const UserOrder = () => {
               />
               <span className="text-lg font-medium text-gray-400">
                 Hiện không có đơn hàng nào chờ xử lý
+              </span>
+            </div>
+          )}
+          {state === "Waiting Goods" && (
+            <div className="bg-white container rounded-lg h-[400px] flex flex-col items-center justify-center gap-y-3 ">
+              <img
+                src="../images/logo-cart.png"
+                alt=""
+                className="w-[250px] h-[250px]"
+              />
+              <span className="text-lg font-medium text-gray-400">
+                Hiện không có đơn hàng nào đợi lấy hàng
               </span>
             </div>
           )}
