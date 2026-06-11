@@ -1,0 +1,282 @@
+<%# views/orderPrint.ejs – trang in hoá đơn cho admin (mở ở tab mới, tự print) %>
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Hoá đơn #<%= data._id %></title>
+  <style>
+    /* ── Reset & base ── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Segoe UI', Arial, sans-serif;
+      font-size: 13px;
+      color: #222;
+      background: #fff;
+    }
+
+    /* ── Nút in (ẩn khi in thật) ── */
+    .no-print {
+      display: flex;
+      gap: 10px;
+      justify-content: flex-end;
+      padding: 12px 40px;
+      border-bottom: 1px solid #eee;
+      background: #fdf2f8;
+    }
+    .btn-print {
+      background: #d63384;
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      padding: 8px 22px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .btn-back {
+      background: #f8f9fa;
+      color: #444;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      padding: 8px 22px;
+      font-size: 14px;
+      cursor: pointer;
+      text-decoration: none;
+    }
+
+    /* ── Trang in ── */
+    .page {
+      max-width: 800px;
+      margin: 24px auto;
+      padding: 32px 40px;
+      background: #fff;
+    }
+
+    /* ── Header ── */
+    .invoice-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 14px;
+    }
+    .shop-name { font-size: 26px; font-weight: 700; color: #d63384; }
+    .shop-sub  { font-size: 12px; color: #888; margin-top: 2px; }
+    .invoice-title { font-size: 20px; font-weight: 700; text-align: right; }
+    .invoice-meta  { font-size: 12px; color: #555; text-align: right; margin-top: 3px; }
+
+    hr.divider { border: none; border-top: 2px solid #d63384; margin: 12px 0; }
+
+    /* ── Info grid ── */
+    .info-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      margin-bottom: 20px;
+    }
+    .section-label {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      color: #d63384;
+      margin-bottom: 6px;
+    }
+    .info-line { font-size: 13px; margin: 3px 0; }
+    .info-right { text-align: right; }
+    .paid   { color: #16a34a; font-weight: 600; }
+    .pending { color: #d97706; font-weight: 600; }
+
+    /* ── Bảng sản phẩm ── */
+    table.products {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 16px;
+    }
+    table.products thead tr {
+      background: #d63384;
+      color: #fff;
+    }
+    table.products th {
+      padding: 9px 10px;
+      font-size: 12px;
+      font-weight: 600;
+      text-align: center;
+    }
+    table.products th.left { text-align: left; }
+    table.products td {
+      padding: 9px 10px;
+      font-size: 13px;
+      vertical-align: middle;
+      border-bottom: 1px solid #f3e0ec;
+    }
+    table.products tbody tr:nth-child(even) { background: #fdf2f8; }
+    .td-center { text-align: center; }
+    .td-right  { text-align: right; font-weight: 600; color: #d63384; }
+    .product-thumb {
+      width: 46px;
+      height: 46px;
+      object-fit: cover;
+      border-radius: 6px;
+      margin-right: 8px;
+      vertical-align: middle;
+    }
+
+    /* ── Tổng kết ── */
+    .summary-wrap { display: flex; justify-content: flex-end; margin-bottom: 28px; }
+    .summary-box  { min-width: 270px; }
+    .summary-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 5px 0;
+      font-size: 13px;
+      border-bottom: 1px solid #f0e0ea;
+    }
+    .summary-discount { color: #d63384; }
+    .summary-total {
+      font-weight: 700;
+      font-size: 16px;
+      color: #d63384;
+      border-bottom: 2px solid #d63384;
+      padding-top: 8px;
+    }
+
+    /* ── Footer ── */
+    .invoice-footer {
+      text-align: center;
+      padding-top: 14px;
+      border-top: 1px dashed #ddd;
+      font-size: 13px;
+      color: #555;
+    }
+    .invoice-footer small { font-size: 11px; color: #999; display: block; margin-top: 4px; }
+
+    /* ── Print media ── */
+    @media print {
+      .no-print { display: none !important; }
+      body { background: #fff; }
+      .page { margin: 0; padding: 20px 28px; max-width: 100%; }
+      @page { margin: 12mm 10mm; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Thanh nút (ẩn khi in) -->
+  <div class="no-print">
+    <a href="/orders/<%= data._id %>" class="btn-back">← Quay lại</a>
+    <button class="btn-print" onclick="window.print()">🖨️ In hoá đơn</button>
+  </div>
+
+  <div class="page" id="invoice">
+
+    <!-- Header -->
+    <div class="invoice-header">
+      <div>
+        <div class="shop-name">LapTopShop</div>
+        <div class="shop-sub">Chuyên laptop chính hãng</div>
+      </div>
+      <div>
+        <div class="invoice-title">HOÁ ĐƠN BÁN HÀNG</div>
+        <div class="invoice-meta">Mã đơn: #<%= String(data._id).slice(-8).toUpperCase() %></div>
+        <div class="invoice-meta">Ngày: <%= data.date %></div>
+        <div class="invoice-meta">Trạng thái: <strong><%= data.status %></strong></div>
+      </div>
+    </div>
+
+    <hr class="divider" />
+
+    <!-- Thông tin khách & thanh toán -->
+    <div class="info-grid">
+      <div>
+        <div class="section-label">Thông tin khách hàng</div>
+        <div class="info-line"><strong>Người nhận:</strong>
+          <%= (data.shippingDetails && data.shippingDetails.receiver) || (data.user && data.user.name) || 'N/A' %>
+        </div>
+        <div class="info-line"><strong>SĐT:</strong>
+          <%= (data.shippingDetails && data.shippingDetails.phone) || 'N/A' %>
+        </div>
+        <div class="info-line"><strong>Địa chỉ:</strong>
+          <%= (data.shippingDetails && data.shippingDetails.address) || 'N/A' %>
+        </div>
+        <% if (data.user && data.user.email) { %>
+        <div class="info-line"><strong>Email:</strong> <%= data.user.email %></div>
+        <% } %>
+      </div>
+      <div class="info-right">
+        <div class="section-label">Thanh toán</div>
+        <div class="info-line"><strong>Phương thức:</strong>
+          <%= data.paymentInfo && data.paymentInfo.method === 'paypal' ? 'PayPal' : 'Tiền mặt' %>
+        </div>
+        <div class="info-line"><strong>Trạng thái TT:</strong>
+          <span class="<%= (data.paymentInfo && data.paymentInfo.status === 'Paid') ? 'paid' : 'pending' %>">
+            <%= (data.paymentInfo && data.paymentInfo.status) || 'Pending' %>
+          </span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Bảng sản phẩm -->
+    <table class="products">
+      <thead>
+        <tr>
+          <th style="width:5%">STT</th>
+          <th class="left" style="width:42%">Sản phẩm</th>
+          <th style="width:17%">Đơn giá</th>
+          <th style="width:9%">SL</th>
+          <th style="width:20%">Thành tiền</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% data.cart.forEach(function(item, idx) { %>
+        <tr>
+          <td class="td-center"><%= idx + 1 %></td>
+          <td>
+            <% if (item.image) { %>
+            <img src="<%= item.image %>" class="product-thumb"
+                 onerror="this.style.display='none'" alt="">
+            <% } %>
+            <%= item.name || item.title || 'Sản phẩm' %>
+          </td>
+          <td class="td-center">
+            <%= item.price ? item.price.toLocaleString('vi-VN') : 0 %> ₫
+          </td>
+          <td class="td-center"><%= item.quantity %></td>
+          <td class="td-right">
+            <%= item.price ? (item.price * item.quantity).toLocaleString('vi-VN') : 0 %> ₫
+          </td>
+        </tr>
+        <% }) %>
+      </tbody>
+    </table>
+
+    <!-- Tổng kết -->
+    <div class="summary-wrap">
+      <div class="summary-box">
+        <div class="summary-row">
+          <span>Tạm tính:</span>
+          <span><%= data.total ? data.total.toLocaleString('vi-VN') : 0 %> ₫</span>
+        </div>
+        <% if (data.discount > 0) { %>
+        <div class="summary-row">
+          <span>Giảm giá:</span>
+          <span class="summary-discount">- <%= data.discount.toLocaleString('vi-VN') %> ₫</span>
+        </div>
+        <% } %>
+        <div class="summary-row summary-total">
+          <span>TỔNG THANH TOÁN:</span>
+          <span><%= data.totalPrice ? data.totalPrice.toLocaleString('vi-VN') : 0 %> ₫</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <div class="invoice-footer">
+      <p>Cảm ơn quý khách đã mua hàng tại <strong>LapTopShop</strong>!</p>
+      <small>Mọi thắc mắc xin liên hệ: support@laptopshop.vn</small>
+    </div>
+
+  </div>
+
+</body>
+</html>

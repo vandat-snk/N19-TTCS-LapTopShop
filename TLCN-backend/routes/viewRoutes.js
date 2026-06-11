@@ -70,6 +70,25 @@ router.get("/orders/:id", async (req, res, next) => {
     res.status(200).render("404");
   }
 });
+// IN HOÁ ĐƠN – route riêng, không cần layout admin
+router.get("/orders/:id/print", async (req, res, next) => {
+  try {
+    const data = await Order.findById(req.params.id);
+    if (!data) return res.status(404).render("404");
+
+    let total = 0;
+    data.cart.forEach((v) => { total += v.price * v.quantity; });
+    data.total    = total;
+    data.date     = new Date(data.createdAt).toLocaleString("vi-VN");
+    data.discount = total - data.totalPrice;
+
+    // Render standalone (không dùng layout)
+    res.render("orderPrint", { data, layout: false });
+  } catch (err) {
+    console.error(err);
+    res.status(500).render("404");
+  }
+});
 router.get("/refunds", (req, res, next) => {
   res.status(200).render("refund", { title: "Manage Refunds" });
 });

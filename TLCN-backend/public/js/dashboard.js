@@ -6,203 +6,20 @@ let totalRevenue = 0;
 let totalInvoice = 0;
 const currentYear = new Date().getFullYear();
 const arr_status = [
-  {
-    status: "Cancelled",
-    quantity: 0,
-  },
-  {
-    status: "Processed",
-    quantity: 0,
-  },
-  {
-    status: "Waiting Goods",
-    quantity: 0,
-  },
-  {
-    status: "Delivery",
-    quantity: 0,
-  },
-  {
-    status: "Success",
-    quantity: 0,
-  },
+  { status: "Cancelled",     quantity: 0 },
+  { status: "Processed",     quantity: 0 },
+  { status: "Waiting Goods", quantity: 0 },
+  { status: "Delivery",      quantity: 0 },
+  { status: "Success",       quantity: 0 },
 ];
-const arr_revenue = [
-  {
-    id: {
-      year: currentYear,
-      month: 1,
-    },
-    total: 0,
-  },
-  {
-    id: {
-      year: currentYear,
-      month: 2,
-    },
-    total: 0,
-  },
-  {
-    id: {
-      year: currentYear,
-      month: 3,
-    },
-    total: 0,
-  },
-  {
-    id: {
-      year: currentYear,
-      month: 4,
-    },
-    total: 0,
-  },
-  {
-    id: {
-      year: currentYear,
-      month: 5,
-    },
-    total: 0,
-  },
-  {
-    id: {
-      year: currentYear,
-      month: 6,
-    },
-    total: 0,
-  },
-  {
-    id: {
-      year: currentYear,
-      month: 7,
-    },
-    total: 0,
-  },
-  {
-    id: {
-      year: currentYear,
-      month: 8,
-    },
-    total: 0,
-  },
-  {
-    id: {
-      year: currentYear,
-      month: 9,
-    },
-    total: 0,
-  },
-  {
-    id: {
-      year: currentYear,
-      month: 10,
-    },
-    total: 0,
-  },
-  {
-    id: {
-      year: currentYear,
-      month: 11,
-    },
-    total: 0,
-  },
-  {
-    id: {
-      year: currentYear,
-      month: 12,
-    },
-    total: 0,
-  },
-];
-const arr_invoice = [
-  {
-    id: {
-      year: currentYear,
-      month: 1,
-    },
-    total: 0,
-  },
-  {
-    id: {
-      year: currentYear,
-      month: 2,
-    },
-    total: 0,
-  },
-  {
-    id: {
-      year: currentYear,
-      month: 3,
-    },
-    total: 0,
-  },
-  {
-    id: {
-      year: currentYear,
-      month: 4,
-    },
-    total: 0,
-  },
-  {
-    id: {
-      year: currentYear,
-      month: 5,
-    },
-    total: 0,
-  },
-  {
-    id: {
-      year: currentYear,
-      month: 6,
-    },
-    total: 0,
-  },
-  {
-    id: {
-      year: currentYear,
-      month: 7,
-    },
-    total: 0,
-  },
-  {
-    id: {
-      year: currentYear,
-      month: 8,
-    },
-    total: 0,
-  },
-  {
-    id: {
-      year: currentYear,
-      month: 9,
-    },
-    total: 0,
-  },
-  {
-    id: {
-      year: currentYear,
-      month: 10,
-    },
-    total: 0,
-  },
-  {
-    id: {
-      year: currentYear,
-      month: 11,
-    },
-    total: 0,
-  },
-  {
-    id: {
-      year: currentYear,
-      month: 12,
-    },
-    total: 0,
-  },
-];
+const arr_revenue = Array.from({ length: 12 }, (_, i) => ({
+  id: { year: currentYear, month: i + 1 }, total: 0,
+}));
+const arr_invoice = Array.from({ length: 12 }, (_, i) => ({
+  id: { year: currentYear, month: i + 1 }, total: 0,
+}));
 
 function number_format(number, decimals, dec_point, thousands_sep) {
-  // *     example: number_format(1234.56, 2, ',', ' ');
-  // *     return: '1 234,56'
   number = (number + "").replace(",", "").replace(" ", "");
   var n = !isFinite(+number) ? 0 : +number,
     prec = !isFinite(+decimals) ? 0 : Math.abs(decimals),
@@ -213,7 +30,6 @@ function number_format(number, decimals, dec_point, thousands_sep) {
       var k = Math.pow(10, prec);
       return "" + Math.round(n * k) / k;
     };
-  // Fix for IE parseFloat(0.55).toFixed(0) = 0;
   s = (prec ? toFixedFix(n, prec) : "" + Math.round(n)).split(".");
   if (s[0].length > 3) {
     s[0] = s[0].replace(/\B(?=(?:\d{3})+(?!\d))/g, sep);
@@ -225,14 +41,10 @@ function number_format(number, decimals, dec_point, thousands_sep) {
   return s.join(dec);
 }
 
-// Load Pie Chart
-
+// Load Pie Chart — nhiều màu sắc khác nhau để dễ phân biệt
 async function loadPieChart() {
   try {
-    const data = await $.ajax({
-      url: "api/v1/orders/count",
-      method: "GET",
-    });
+    const data = await $.ajax({ url: "api/v1/orders/count", method: "GET" });
     await data.forEach(async (value) => {
       await arr_status.forEach((status) => {
         if (status.status == value._id) status.quantity = value.count;
@@ -242,30 +54,27 @@ async function loadPieChart() {
     const myPieChart = new Chart(ctx, {
       type: "doughnut",
       data: {
-        labels: [
-          arr_status[0].status,
-          arr_status[1].status,
-          arr_status[2].status,
-          arr_status[3].status,
-          arr_status[4].status,
-        ],
+        labels: arr_status.map((s) => s.status),
         datasets: [
           {
-            data: [
-              arr_status[0].quantity,
-              arr_status[1].quantity,
-              arr_status[2].quantity,
-              arr_status[3].quantity,
-              arr_status[4].quantity,
+            data: arr_status.map((s) => s.quantity),
+            // 5 màu rõ ràng, khác nhau hoàn toàn
+            backgroundColor: [
+              "#dc3545", // đỏ  — Huỷ
+              "#fd7e14", // cam  — Đang xử lý
+              "#6c757d", // xám  — Chờ hàng
+              "#6f42c1", // tím  — Giao hàng
+              "#20c997", // xanh lá — Thành công
             ],
-            backgroundColor: ["red", "orange", "gray", "blue", "green"],
             hoverBackgroundColor: [
-              "#dc3545",
-              "#ffc107",
-              "#adb5bd",
-              "#2c9faf",
-              "#20c997",
+              "#c82333",
+              "#e8690e",
+              "#5a6268",
+              "#5a32a3",
+              "#17a589",
             ],
+            borderWidth: 3,
+            borderColor: "#ffffff",
             hoverBorderColor: "rgba(234, 236, 244, 1)",
           },
         ],
@@ -279,13 +88,11 @@ async function loadPieChart() {
           borderWidth: 1,
           xPadding: 15,
           yPadding: 15,
-          displayColors: false,
+          displayColors: true,
           caretPadding: 10,
         },
-        legend: {
-          display: false,
-        },
-        cutoutPercentage: 80,
+        legend: { display: false },
+        cutoutPercentage: 75,
       },
     });
   } catch (error) {
@@ -293,143 +100,98 @@ async function loadPieChart() {
   }
 }
 
-// Area Chart Example
+// Area Chart — 2 màu khác nhau rõ ràng: hồng (thu nhập) & xanh lá (chi phí)
 async function loadAreaChart() {
   try {
-    const data = await $.ajax({
-      url: "api/v1/orders/sum",
-      method: "GET",
-    });
-    const respond = await $.ajax({
-      url: "api/v1/imports/sum",
-      method: "GET",
-    });
+    const data    = await $.ajax({ url: "api/v1/orders/sum",  method: "GET" });
+    const respond = await $.ajax({ url: "api/v1/imports/sum", method: "GET" });
+
     await data.forEach(async (value) => {
       totalRevenue += value.total_revenue_month;
       await arr_revenue.forEach((month) => {
-        if (
-          month.id.year === value._id.year &&
-          month.id.month === value._id.month
-        )
+        if (month.id.year === value._id.year && month.id.month === value._id.month)
           month.total = value.total_revenue_month;
       });
     });
     await respond.forEach(async (value) => {
       totalInvoice += value.total_month;
       await arr_invoice.forEach((month) => {
-        if (
-          month.id.year === value._id.year &&
-          month.id.month === value._id.month
-        )
+        if (month.id.year === value._id.year && month.id.month === value._id.month)
           month.total = value.total_month;
       });
     });
 
     document.getElementById("totalRevenue").innerHTML =
-      (Number((totalRevenue / 1000000).toFixed())).toLocaleString().replace(/,/g, '.') + " Triệu VND";
+      Number((totalRevenue / 1000000).toFixed()).toLocaleString().replace(/,/g, ".") + " Triệu VND";
     document.getElementById("totalInvoice").innerHTML =
-      (Number((totalInvoice / 1000000).toFixed())).toLocaleString().replace(/,/g, '.')  + " Triệu VND";
-    const revenue = await arr_revenue.map((value) => value.total);
-    const invoice = await arr_invoice.map((value) => value.total);
+      Number((totalInvoice / 1000000).toFixed()).toLocaleString().replace(/,/g, ".") + " Triệu VND";
+
+    const revenue = arr_revenue.map((v) => v.total);
+    const invoice = arr_invoice.map((v) => v.total);
     const ctc = document.getElementById("myAreaChart");
+
     const myLineChart = new Chart(ctc, {
       type: "line",
       data: {
-        labels: [
-          "Jan",
-          "Feb",
-          "Mar",
-          "Apr",
-          "May",
-          "Jun",
-          "Jul",
-          "Aug",
-          "Sep",
-          "Oct",
-          "Nov",
-          "Dec",
-        ],
+        labels: ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"],
         datasets: [
           {
             label: "Thu nhập",
             lineTension: 0.3,
-            backgroundColor: "rgba(78, 115, 223, 0.05)",
-            borderColor: "rgba(78, 115, 223, 1)",
-            pointRadius: 3,
-            pointBackgroundColor: "rgba(78, 115, 223, 1)",
-            pointBorderColor: "rgba(78, 115, 223, 1)",
-            pointHoverRadius: 3,
-            pointHoverBackgroundColor: "rgba(78, 115, 223, 1)",
-            pointHoverBorderColor: "rgba(78, 115, 223, 1)",
-            pointHitRadius: 10,
+            backgroundColor: "rgba(214, 51, 132, 0.08)",  // hồng nhạt fill
+            borderColor: "#d63384",                        // hồng đậm line
+            pointRadius: 4,
+            pointBackgroundColor: "#d63384",
+            pointBorderColor: "#ffffff",
             pointBorderWidth: 2,
+            pointHoverRadius: 6,
+            pointHoverBackgroundColor: "#d63384",
+            pointHoverBorderColor: "#ffffff",
+            pointHitRadius: 10,
             data: revenue,
           },
           {
             label: "Chi phí",
             lineTension: 0.3,
-            backgroundColor: "rgba(78, 115, 223, 0.05)",
-            borderColor: "rgba(78, 115, 223, 1)",
-            pointRadius: 3,
-            pointBackgroundColor: "rgba(78, 115, 223, 1)",
-            pointBorderColor: "rgba(78, 115, 223, 1)",
-            pointHoverRadius: 3,
-            pointHoverBackgroundColor: "rgba(78, 115, 223, 1)",
-            pointHoverBorderColor: "rgba(78, 115, 223, 1)",
-            pointHitRadius: 10,
+            backgroundColor: "rgba(32, 201, 151, 0.08)",  // xanh lá nhạt fill
+            borderColor: "#20c997",                        // xanh lá đậm line
+            pointRadius: 4,
+            pointBackgroundColor: "#20c997",
+            pointBorderColor: "#ffffff",
             pointBorderWidth: 2,
+            pointHoverRadius: 6,
+            pointHoverBackgroundColor: "#20c997",
+            pointHoverBorderColor: "#ffffff",
+            pointHitRadius: 10,
             data: invoice,
           },
         ],
       },
       options: {
         maintainAspectRatio: false,
-        layout: {
-          padding: {
-            left: 10,
-            right: 25,
-            top: 25,
-            bottom: 0,
-          },
-        },
+        layout: { padding: { left: 10, right: 25, top: 25, bottom: 0 } },
         scales: {
-          xAxes: [
-            {
-              time: {
-                unit: "date",
-              },
-              gridLines: {
-                display: false,
-                drawBorder: false,
-              },
-              ticks: {
-                maxTicksLimit: 7,
-              },
+          xAxes: [{
+            time: { unit: "date" },
+            gridLines: { display: false, drawBorder: false },
+            ticks: { maxTicksLimit: 7 },
+          }],
+          yAxes: [{
+            ticks: {
+              maxTicksLimit: 5,
+              padding: 10,
+              callback: function (value) { return number_format(value); },
             },
-          ],
-          yAxes: [
-            {
-              ticks: {
-                maxTicksLimit: 5,
-                padding: 10,
-                // Include a dollar sign in the ticks
-                callback: function (value, index, values) {
-                  return number_format(value);
-                },
-              },
-              gridLines: {
-                color: "rgb(234, 236, 244)",
-                zeroLineColor: "rgb(234, 236, 244)",
-                drawBorder: false,
-                borderDash: [2],
-                zeroLineBorderDash: [2],
-              },
+            gridLines: {
+              color: "rgb(234, 236, 244)",
+              zeroLineColor: "rgb(234, 236, 244)",
+              drawBorder: false,
+              borderDash: [2],
+              zeroLineBorderDash: [2],
             },
-          ],
+          }],
         },
-        legend: {
-          display: false,
-        },
+        legend: { display: false },
         tooltips: {
           backgroundColor: "rgb(255,255,255)",
           bodyFontColor: "#858796",
@@ -440,15 +202,14 @@ async function loadAreaChart() {
           borderWidth: 1,
           xPadding: 15,
           yPadding: 15,
-          displayColors: false,
+          displayColors: true,
           intersect: false,
           mode: "index",
           caretPadding: 10,
           callbacks: {
             label: function (tooltipItem, chart) {
-              var datasetLabel =
-                chart.datasets[tooltipItem.datasetIndex].label || "";
-              return datasetLabel + ": $" + number_format(tooltipItem.yLabel);
+              var datasetLabel = chart.datasets[tooltipItem.datasetIndex].label || "";
+              return datasetLabel + ": " + number_format(tooltipItem.yLabel) + " VND";
             },
           },
         },
@@ -458,18 +219,13 @@ async function loadAreaChart() {
     showAlert("error", error);
   }
 }
+
 $(document).ready(async function () {
   try {
     loadAreaChart();
     loadPieChart();
-    const data = await $.ajax({
-      url: "api/v1/users",
-      method: "GET",
-    });
-    const respond = await $.ajax({
-      url: `api/v1/orders?status=Success`,
-      method: "GET",
-    });
+    const data    = await $.ajax({ url: "api/v1/users",                method: "GET" });
+    const respond = await $.ajax({ url: "api/v1/orders?status=Success", method: "GET" });
     $("#totalUser").html(data.results);
     $("#totalOrder").html(respond.results);
   } catch (error) {

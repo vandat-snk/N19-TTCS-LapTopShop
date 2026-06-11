@@ -11,6 +11,7 @@ import LoadingPage from "../../components/loading/LoadingPage";
 import Swal from "sweetalert2";
 import Skeleton from "../../components/skeleton/Skeleton";
 import { toast } from "react-toastify";
+import PrintInvoiceTemplate from "../../components/print/PrintInvoiceTemplate";
 
 const InformationDetailOrder = () => {
   const navigate = useNavigate();
@@ -183,6 +184,7 @@ const InformationDetailOrder = () => {
               <span className="text-xl font-medium">
                 ĐƠN HÀNG: {orderId?._id}
               </span>
+              <PrintInvoiceTemplate order={orderId} />
               {orderId?.status === "Processed" && (
                 <button
                   className="border-2 border-red-400 p-2 rounded-lg text-red-400 text-sm font-medium hover:text-red-600 hover:border-red-600"

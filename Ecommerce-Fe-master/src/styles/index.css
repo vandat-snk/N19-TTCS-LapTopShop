@@ -447,3 +447,9 @@ input[type=range]::-webkit-slider-thumb {
   -webkit-appearance: none;
   @apply bg-green-500;
 }/*# sourceMappingURL=index.css.map */
+@media print {
+  /* Ẩn sidebar, header, footer khi in */
+  .sidebar, nav, header, footer, .chatbot {
+    display: none !important;
+  }
+}
