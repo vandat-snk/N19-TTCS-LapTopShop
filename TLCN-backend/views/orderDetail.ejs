@@ -26,9 +26,16 @@
         <div class="card-body">
 
           <% data.cart.forEach(function(value){
-            const name = value.title && value.title.length > 28
-              ? value.title.slice(0, 29)
-              : (value.title || 'Sản phẩm');
+            const productName =
+              value.title ||
+              value.name ||
+              (value.product && value.product.title) ||
+              "Sản phẩm";
+
+            const name =
+              productName.length > 28
+                ? productName.slice(0, 29)
+                : productName;
           %>
 
           <div class="card mb-3 border-0 shadow-sm" style="border-radius:12px;">

@@ -56,7 +56,7 @@ const ProductOrder = ({ data }) => {
               : null;
 
           const productId = product?._id || item?.product || index;
-          const title = item?.title || product?.title || "Sản phẩm";
+          const title = item?.title || item?.name || product?.title || "Sản phẩm";
           const image = item?.image || product?.images?.[0] || "";
           const price =
             item?.price || product?.promotion || product?.price || 0;

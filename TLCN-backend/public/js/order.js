@@ -23,7 +23,12 @@ const loadData = async () => {
             if (data && data.length > 0) {
               data.forEach((value, index) => {
                 // ĐÃ SỬA CHÍNH XÁC: Đọc trực tiếp value.title từ Snapshot, không dùng value.product.title
-                const titleText = value.title || "Sản phẩm không có tên";
+                const titleText =
+                  value.title ||
+                  value.name ||
+                  value.product?.title ||
+                  "Sản phẩm không có tên";
+
                 const name =
                   titleText.length > 39
                     ? titleText.slice(0, 40) + "..."
